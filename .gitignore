@@ -1,0 +1,14 @@
+.Rproj.user
+.Rhistory
+.RData
+.httr-oauth
+.DS_Store
+.quarto
+/doc/
+/Meta/
+docs
+vignettes/*_cache/
+vignettes/*_files/
+vignettes/*.html
+/testData/
+/explorations/

@@ -1,0 +1,426 @@
+---
+title: "4. Resolution-Matched References"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: flatly
+vignette: >
+  %\VignetteIndexEntry{4. Resolution-Matched References}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                       fig.align = "center")
+```
+
+```{r load}
+library(gridmorph)
+library(terra)
+```
+
+Four of `gridmorph`'s thirteen indices - `gm_depth_index()`,
+`gm_polsby_popper_index()`, `gm_reock_index()`, `gm_detour_index()` - work
+by comparing something measured on the raster against a reference value
+for a perfect circle. In each of these four, that reference used to be a
+plain closed-form formula: the textbook constant a smooth, infinitely
+precise circle would give. At any finite raster resolution, that turned
+out to be the wrong number to compare against - even a perfectly
+rasterized disk scored measurably below 1. This vignette shows the
+symptom, explains why it happens, and describes the fix now built into
+all four functions.
+
+# The symptom
+
+A disk is the one shape every one of these four indices should score at
+(or extremely close to) 1 - that is each index's own definition of
+"optimal". Reconstructing what each function's raw, pre-reference-fix
+formula would have given - using only the geometric quantities each
+function already returns (`area`, `perimeter`, `mbc_area`,
+`hull_perimeter`) - shows all four undershooting 1 well outside any
+reasonable rounding:
+
+```{r symptom}
+make_disk <- function(n = 81, radius = 30) {
+  r <- rast(nrows = n, ncols = n, xmin = 0, xmax = n, ymin = 0, ymax = n, crs = "local")
+  cx <- init(r, "x") - n / 2; cy <- init(r, "y") - n / 2
+  ifel(sqrt(cx^2 + cy^2) <= radius, 1, 0)
+}
+disk <- make_disk()
+
+depth   <- gm_depth_index(disk)
+pp      <- gm_polsby_popper_index(disk)
+reock   <- gm_reock_index(disk)
+detour  <- gm_detour_index(disk)
+
+raw_scores <- c(
+  depth          = depth$mean_depth / (sqrt(depth$area / pi) / 3),
+  polsby_popper  = 4 * pi * pp$area / pp$perimeter^2,
+  reock          = reock$area / reock$mbc_area,
+  detour         = 2 * sqrt(pi * detour$area) / detour$hull_perimeter
+)
+knitr::kable(round(raw_scores, 3), col.names = "raw score (a perfect disk should give 1)")
+```
+
+Comparing this to what these four functions actually return today shows
+the fix in effect - every one lands close to 1:
+
+```{r fixed}
+fixed_scores <- c(depth = depth$index, polsby_popper = pp$index,
+                   reock = reock$index, detour = detour$index)
+knitr::kable(round(fixed_scores, 3), col.names = "gridmorph's actual index")
+```
+
+# Why a perfect disk doesn't score exactly 1
+
+The four functions fall into two different mechanisms, both boiling down
+to the same root cause: **a raster is a set of finite cells, not a
+continuous shape**, so anything measured from it - a distance, a
+perimeter, an area by pixel count - is only ever an approximation of the
+matching continuous quantity, and that approximation doesn't hit the
+continuous formula's own constant exactly. Zooming in on a small
+rasterized disk against the true circle it approximates makes this
+concrete - the shape these four indices actually measure is the blue
+stair-step region, not the smooth red curve:
+
+```{r fig-raster-vs-circle, echo = FALSE, fig.width = 5.5, fig.height = 5.5}
+n <- 16; radius <- 6
+cx <- n / 2; cy <- n / 2
+xy <- expand.grid(i = 1:n, j = 1:n)
+xy$x <- xy$i - 0.5; xy$y <- xy$j - 0.5
+xy$valid <- sqrt((xy$x - cx)^2 + (xy$y - cy)^2) <= radius
+
+plot(NA, xlim = c(0, n), ylim = c(0, n), asp = 1, axes = FALSE, xlab = "", ylab = "",
+     main = "A rasterized disk vs. the true circle it approximates")
+for (i in seq_len(nrow(xy))) {
+  rect(xy$i[i] - 1, xy$j[i] - 1, xy$i[i], xy$j[i],
+       col = if (xy$valid[i]) "#8fb8de" else "white", border = "grey85")
+}
+theta <- seq(0, 2 * pi, length.out = 300)
+lines(cx + radius * cos(theta), cy + radius * sin(theta), col = "firebrick", lwd = 2.5)
+points(xy$x[xy$valid], xy$y[xy$valid], pch = 16, cex = 0.5, col = "grey25")
+legend("topright", legend = c("true continuous circle", "valid cell centre"),
+       col = c("firebrick", "grey25"), lty = c(1, NA), pch = c(NA, 16), lwd = c(2.5, NA),
+       bty = "n", cex = 0.9)
+```
+
+**`gm_depth_index()`**: `mean_depth` comes from `terra::distance()`,
+which measures from a cell's own *centre* to the nearest invalid cell's
+*centre* - not to the true boundary curve. That's a systematically larger
+quantity than true distance-to-boundary, most so right at the boundary
+and decaying (but never fully vanishing at any finite resolution) toward
+the interior. Zooming in on one boundary cell shows the gap directly - the
+true distance to the circle (green) is shorter than the distance
+`terra::distance()` actually measures, to the centre of the nearest
+invalid cell (orange, dashed):
+
+```{r fig-depth-mechanism, echo = FALSE, fig.width = 7.5, fig.height = 5.2}
+row_y <- cy + 0.5
+row <- xy[xy$valid & abs(xy$y - row_y) < 1e-6, ]
+pick <- row[which.max(row$x), ]
+true_pt <- c(cx + radius, pick$y)
+inv <- xy[!xy$valid, ]
+inv$dist_to_pick <- sqrt((inv$x - pick$x)^2 + (inv$y - pick$y)^2)
+nearest_inv <- inv[which.min(inv$dist_to_pick), ]
+
+xlim <- c(pick$x - 3.5, pick$x + 3); ylim <- c(pick$y - 3, pick$y + 3.5)
+plot(NA, xlim = xlim, ylim = ylim, asp = 1, axes = FALSE, xlab = "", ylab = "",
+     main = "gm_depth_index(): what terra::distance() measures vs. true depth")
+for (i in seq_len(nrow(xy))) {
+  if (xy$i[i] - 1 < xlim[1] - 1 || xy$i[i] > xlim[2] + 1) next
+  if (xy$j[i] - 1 < ylim[1] - 1 || xy$j[i] > ylim[2] + 1) next
+  rect(xy$i[i] - 1, xy$j[i] - 1, xy$i[i], xy$j[i],
+       col = if (xy$valid[i]) "#8fb8de" else "white", border = "grey85")
+}
+rect(pick$i - 1, pick$j - 1, pick$i, pick$j, col = "#f4c66b", border = "grey60")
+theta_r <- seq(-pi / 2, pi / 2, length.out = 200)
+lines(cx + radius * cos(theta_r), cy + radius * sin(theta_r), col = "firebrick", lwd = 2.5)
+off <- 0.16
+arrows(pick$x, pick$y + off, true_pt[1], pick$y + off, col = "#1a7a1a", lwd = 3, length = 0.13)
+arrows(pick$x, pick$y - off, nearest_inv$x, pick$y - off, col = "#b3590a", lwd = 3, length = 0.13, lty = 2)
+points(pick$x, pick$y, pch = 16, cex = 1.3)
+legend("bottomleft", legend = c("true distance to the circle", "terra::distance() measures this"),
+       col = c("#1a7a1a", "#b3590a"), lty = c(1, 2), lwd = 3, bty = "n", cex = 0.85)
+```
+
+**`gm_polsby_popper_index()`**: perimeter comes from marching squares
+(`terra::as.contour()`), a technique built to reconstruct a smooth
+boundary from a *smoothly-sampled* field. A binary raster mask was never
+smoothly sampled in the first place - there's no genuine sub-cell signal
+for it to interpolate - so the reconstructed perimeter carries a real,
+persistent overestimate that does not shrink away at finer resolutions,
+on top of substantial noise depending on exactly how the shape's boundary
+happens to sit against the grid. The left panel shows the reconstructed
+contour (dark blue) cutting corners against the true circle in some
+places and bulging past it in others; the right panel shows twelve disks
+of the *same* radius, each centred a random fraction of a cell
+differently, and how much that alone moves the (already
+resolution-matched) index:
+
+```{r fig-pp-mechanism, echo = FALSE, fig.width = 10, fig.height = 5}
+n2 <- 20; radius2 <- 7
+r2 <- rast(nrows = n2, ncols = n2, xmin = 0, xmax = n2, ymin = 0, ymax = n2, crs = "local")
+cxr <- init(r2, "x") - n2 / 2; cyr <- init(r2, "y") - n2 / 2
+mask2 <- ifel(sqrt(cxr^2 + cyr^2) <= radius2, 1, 0)
+padded2 <- extend(mask2, 1, fill = 0)
+cont2 <- as.contour(padded2, levels = 0.5)
+cont_xy <- geom(cont2)
+
+par(mfrow = c(1, 2))
+cx2 <- n2 / 2; cy2 <- n2 / 2
+xy2 <- expand.grid(i = 1:n2, j = 1:n2)
+xy2$x <- xy2$i - 0.5; xy2$y <- xy2$j - 0.5
+xy2$valid <- sqrt((xy2$x - cx2)^2 + (xy2$y - cy2)^2) <= radius2
+
+plot(NA, xlim = c(3, n2 - 3), ylim = c(3, n2 - 3), asp = 1, axes = FALSE, xlab = "", ylab = "",
+     main = "marching-squares perimeter vs. the true circle")
+for (i in seq_len(nrow(xy2))) {
+  rect(xy2$i[i] - 1, xy2$j[i] - 1, xy2$i[i], xy2$j[i],
+       col = if (xy2$valid[i]) "#8fb8de" else "white", border = "grey85")
+}
+theta2 <- seq(0, 2 * pi, length.out = 300)
+lines(cx2 + radius2 * cos(theta2), cy2 + radius2 * sin(theta2), col = "firebrick", lwd = 2)
+lines(cont_xy[, "x"], cont_xy[, "y"], col = "#1a3d6b", lwd = 2.5)
+legend("topright", legend = c("true circle", "marching-squares contour"),
+       col = c("firebrick", "#1a3d6b"), lwd = c(2, 2.5), bty = "n", cex = 0.85)
+
+set.seed(11)
+n_ph <- 12
+offs <- data.frame(dx = runif(n_ph, -0.45, 0.45), dy = runif(n_ph, -0.45, 0.45))
+pp_scores <- numeric(n_ph)
+for (k in seq_len(n_ph)) {
+  rr <- rast(nrows = n2, ncols = n2, xmin = 0, xmax = n2, ymin = 0, ymax = n2, crs = "local")
+  xyk <- xyFromCell(rr, 1:ncell(rr))
+  dk <- sqrt((xyk[, 1] - (n2 / 2 + offs$dx[k]))^2 + (xyk[, 2] - (n2 / 2 + offs$dy[k]))^2)
+  values(rr) <- ifelse(dk <= radius2, 1, NA)
+  pp_scores[k] <- gm_polsby_popper_index(rr)$index
+}
+plot(seq_len(n_ph), pp_scores, pch = 16, cex = 1.4, col = "#1a3d6b",
+     xlab = "12 same-radius disks, different sub-cell phase", ylab = "gm_polsby_popper_index()$index",
+     main = "residual phase noise, even after the fix", ylim = c(0.9, 1.05), xaxt = "n")
+abline(h = 1, col = "firebrick", lty = 2, lwd = 2)
+axis(1, at = seq_len(n_ph), labels = FALSE)
+```
+
+**`gm_reock_index()` / `gm_detour_index()`**: both compare a pixel-COUNT
+area (or a raster-derived convex hull) against an EXACTLY-computed
+reference (the minimum bounding circle's area, or a perfect circle's
+analytical perimeter). Pixel counting alone always slightly undershoots a
+shape's true continuous area near its own boundary, while the exact
+reference carries no matching imprecision - so the two sides of the ratio
+are measured by two different conventions that don't cancel by
+themselves. Under centre-based rasterization, a boundary cell's own far
+corner can sit outside the true circle - the hull built from those
+corners (dark blue) visibly bulges past it:
+
+```{r fig-hull-mechanism, echo = FALSE, fig.width = 7, fig.height = 5.8}
+corners <- do.call(rbind, lapply(seq_len(nrow(xy)), function(k) {
+  if (!xy$valid[k]) return(NULL)
+  cxs <- c(xy$i[k] - 1, xy$i[k]); cys <- c(xy$j[k] - 1, xy$j[k])
+  cc <- expand.grid(x = cxs, y = cys)
+  cc$d <- sqrt((cc$x - cx)^2 + (cc$y - cy)^2)
+  cc[which.max(cc$d), ]
+}))
+hull_idx <- chull(corners$x, corners$y)
+hull_pts <- corners[c(hull_idx, hull_idx[1]), ]
+
+plot(NA, xlim = c(0, n), ylim = c(0, n + 3), asp = 1, axes = FALSE, xlab = "", ylab = "",
+     main = "a boundary cell's own outer corner sits outside the true circle")
+for (i in seq_len(nrow(xy))) {
+  rect(xy$i[i] - 1, xy$j[i] - 1, xy$i[i], xy$j[i],
+       col = if (xy$valid[i]) "#8fb8de" else "white", border = "grey85")
+}
+lines(cx + radius * cos(theta), cy + radius * sin(theta), col = "firebrick", lwd = 2.5)
+lines(hull_pts$x, hull_pts$y, col = "#1a3d6b", lwd = 2.5)
+points(corners$x, corners$y, pch = 16, cex = 0.5, col = "grey40")
+pick2 <- xy[xy$valid & abs(xy$y - (cy + 0.5)) < 1e-6, ]
+pick2 <- pick2[which.max(pick2$x), ]
+rect(pick2$i - 1, pick2$j - 1, pick2$i, pick2$j, col = "#f4c66b", border = "grey50", lwd = 1.5)
+points(pick2$i, pick2$j, pch = 16, cex = 1.2, col = "#b3590a")
+legend("topleft", legend = c("true circle", "hull of cell corners", "a boundary cell's own outer corner"),
+       col = c("firebrick", "#1a3d6b", "#b3590a"), lwd = c(2.5, 2.5, NA), pch = c(NA, NA, 16),
+       bty = "n", cex = 0.85)
+```
+
+# The fix: measure the reference the same way
+
+The common fix, used identically by all four: instead of comparing the
+shape's raster-measured score against a pure formula, build an *actual*
+rasterized disk at the input's own cell size and area, run it through the
+exact same measurement pipeline the shape itself just went through, and
+divide by that instead. Since both sides of the ratio now carry the same
+measurement artifacts, those artifacts cancel out rather than leaking
+into the final index:
+
+```{r ref-index}
+c(polsby_popper_ref = pp$ref_index, reock_ref = reock$ref_index, detour_ref = detour$ref_index)
+```
+
+Each of these `ref_index` values is exactly what a same-resolution
+rasterized disk itself scores on the *raw*, uncorrected formula - the
+same numbers as the "raw score" table above, just for a disk built to
+match the input's own resolution rather than the input itself.
+`gm_depth_index()`'s own reference is the analogous quantity - a
+same-resolution disk's own mean distance-to-boundary - returned as
+`ref_depth` rather than `ref_index`, since it's a physical distance, not
+a dimensionless score.
+
+One index needs a further refinement. `gm_polsby_popper_index()`'s
+marching-squares perimeter is sensitive enough to exactly where a shape's
+boundary falls against the pixel grid that a *single* reference disk
+isn't a reliable stand-in - two disks of the *same radius*, centred a
+fraction of a cell apart, can give visibly different raw scores. The left
+panel below overlays two such disks directly: one centred on a cell
+centre (solid dark outline), one shifted `0.45` cells diagonally (dashed
+orange outline) - the blue-shaded cells are only in the first disk, the
+orange-shaded cells only in the second. That's the entire source of the
+difference between their raw scores. The right panel shows where those
+two scores (triangles) sit among the full 25-point grid of sub-cell
+offsets `gm_polsby_popper_index()` actually averages over: scattered on
+both sides of the mean (the dark blue line) - no single one of those 25
+points would make a reliable reference on its own, but their mean is
+stable enough to use:
+
+```{r fig-phase-averaging, echo = FALSE, fig.width = 11, fig.height = 4.8}
+make_disk_at <- function(nn, rr, dx, dy) {
+  rst <- rast(nrows = nn, ncols = nn, xmin = 0, xmax = nn, ymin = 0, ymax = nn, crs = "local")
+  xyk <- xyFromCell(rst, 1:ncell(rst))
+  dd <- sqrt((xyk[, 1] - (nn / 2 + dx))^2 + (xyk[, 2] - (nn / 2 + dy))^2)
+  values(rst) <- ifelse(dd <= rr, 1, NA)
+  rst
+}
+raw_pp <- function(rst) {
+  res <- gm_polsby_popper_index(rst)
+  4 * pi * res$area / res$perimeter^2
+}
+contour_of <- function(rst) {
+  valid <- !is.na(rst)
+  padded <- extend(ifel(valid, 1, 0), 1, fill = 0)
+  geom(as.contour(padded, levels = 0.5))
+}
+
+n3 <- 14; radius3 <- 5  # coarser than the figures above, so a 0.45-cell phase shift is clearly visible
+offsets25 <- seq(-0.45, 0.45, length.out = 5)
+grid_off <- expand.grid(dx = offsets25, dy = offsets25)
+raw_grid <- vapply(seq_len(nrow(grid_off)), function(k) raw_pp(make_disk_at(n3, radius3, grid_off$dx[k], grid_off$dy[k])), numeric(1))
+avg_ref <- mean(raw_grid)
+idx1 <- which(grid_off$dx == 0 & grid_off$dy == 0)
+idx2 <- which.max(grid_off$dx + grid_off$dy)
+disk_a <- make_disk_at(n3, radius3, grid_off$dx[idx1], grid_off$dy[idx1])
+disk_b <- make_disk_at(n3, radius3, grid_off$dx[idx2], grid_off$dy[idx2])
+cont_a <- contour_of(disk_a); cont_b <- contour_of(disk_b)
+
+par(mfrow = c(1, 2))
+xy_a <- xyFromCell(disk_a, 1:ncell(disk_a)); v_a <- as.vector(values(!is.na(disk_a)))
+xy_b <- xyFromCell(disk_b, 1:ncell(disk_b)); v_b <- as.vector(values(!is.na(disk_b)))
+only_a <- v_a & !v_b; only_b <- v_b & !v_a; both_ab <- v_a & v_b
+
+plot(NA, xlim = c(1, n3 - 1), ylim = c(1, n3 - 1), asp = 1, axes = FALSE, xlab = "", ylab = "",
+     main = "same radius, different sub-cell phase")
+for (i in which(both_ab)) rect(xy_a[i, 1] - 0.5, xy_a[i, 2] - 0.5, xy_a[i, 1] + 0.5, xy_a[i, 2] + 0.5, col = "#c9d9ea", border = "grey85")
+for (i in which(only_a)) rect(xy_a[i, 1] - 0.5, xy_a[i, 2] - 0.5, xy_a[i, 1] + 0.5, xy_a[i, 2] + 0.5, col = "#6fa8dc", border = "grey60")
+for (i in which(only_b)) rect(xy_b[i, 1] - 0.5, xy_b[i, 2] - 0.5, xy_b[i, 1] + 0.5, xy_b[i, 2] + 0.5, col = "#f4b183", border = "grey60")
+lines(cont_a[, "x"], cont_a[, "y"], col = "#1a3d6b", lwd = 3)
+lines(cont_b[, "x"], cont_b[, "y"], col = "#b3590a", lwd = 3, lty = 2)
+legend("topleft", legend = c(sprintf("centred on a cell centre (raw = %.3f)", raw_grid[idx1]),
+                              sprintf("shifted 0.45 cells diagonally (raw = %.3f)", raw_grid[idx2]),
+                              "cells only the first disk includes", "cells only the second disk includes"),
+       col = c("#1a3d6b", "#b3590a", NA, NA), lty = c(1, 2, NA, NA), lwd = c(3, 3, NA, NA),
+       fill = c(NA, NA, "#6fa8dc", "#f4b183"), border = NA, bty = "n", cex = 0.8)
+
+plot(seq_along(raw_grid), sort(raw_grid), pch = 16, col = "grey50", cex = 1.4,
+     xlab = "the 25 sub-cell offsets, sorted by score", ylab = "raw polsby-popper score",
+     main = "single offsets are noisy; the mean isn't", xaxt = "n")
+axis(1, at = seq_along(raw_grid), labels = FALSE)
+abline(h = avg_ref, col = "#1a3d6b", lwd = 3)
+r1_rank <- match(raw_grid[idx1], sort(raw_grid))
+r2_rank <- match(raw_grid[idx2], sort(raw_grid))
+points(r1_rank, raw_grid[idx1], pch = 17, cex = 2, col = "#1a3d6b")
+points(r2_rank, raw_grid[idx2], pch = 17, cex = 2, col = "#b3590a")
+text(r1_rank, raw_grid[idx1], "centred", pos = 3, cex = 0.9, col = "#1a3d6b")
+text(r2_rank, raw_grid[idx2], "shifted 0.45", pos = 4, cex = 0.9, col = "#b3590a")
+legend("bottomright", legend = sprintf("mean across all 25 = ref_index = %.3f", avg_ref),
+       col = "#1a3d6b", lwd = 3, bty = "n", cex = 0.9)
+```
+
+That reference is instead averaged over a grid of 25 sub-cell offsets,
+which was enough to keep the corrected index within about half a percent
+of 1 across every resolution checked. `gm_reock_index()` and
+`gm_detour_index()` don't need this: their own raw scores were checked
+directly and shown to vary by only a few thousandths across the same
+offsets, so a single reference disk is already a reliable comparison.
+
+None of these four functions expose a way to opt back into the old,
+purely-analytical comparison - the number it used to give was not a
+different valid choice, it was measurably the wrong one for a rasterized
+shape at any finite resolution.
+
+Running all four functions on disks of increasing radius shows what the
+fix buys, and where it doesn't: `gm_depth_index()`/`gm_reock_index()`/
+`gm_detour_index()`'s raw scores (orange) converge toward 1 only slowly,
+needing a genuinely large radius to get close - the resolution-matched
+`index` (blue) is already tight at every radius shown, including the
+smallest. `gm_polsby_popper_index()`'s raw score doesn't converge toward 1
+at all, even at radius 90 - the non-vanishing bias described above - while
+its own resolution-matched `index` stays close to 1 throughout, with the
+visible wobble being exactly the residual phase noise from the figure
+above:
+
+```{r fig-convergence, echo = FALSE, fig.width = 10, fig.height = 6}
+radii <- c(10, 15, 20, 30, 45, 60, 90)
+conv <- data.frame()
+for (rad in radii) {
+  nn <- ceiling(rad * 2.7)
+  dk <- make_disk(nn, rad)
+  d_res <- gm_depth_index(dk); pp_res <- gm_polsby_popper_index(dk)
+  reock_res <- gm_reock_index(dk); detour_res <- gm_detour_index(dk)
+  raw <- c(depth = d_res$mean_depth / (sqrt(d_res$area / pi) / 3),
+           polsby_popper = 4 * pi * pp_res$area / pp_res$perimeter^2,
+           reock = reock_res$area / reock_res$mbc_area,
+           detour = 2 * sqrt(pi * detour_res$area) / detour_res$hull_perimeter)
+  fixed <- c(depth = d_res$index, polsby_popper = pp_res$index,
+             reock = reock_res$index, detour = detour_res$index)
+  conv <- rbind(conv, data.frame(radius = rad, index = names(raw), raw = raw, fixed = fixed))
+}
+
+par(mfrow = c(2, 2), mar = c(4.2, 4.2, 3, 1))
+idx_names <- c("depth", "polsby_popper", "reock", "detour")
+titles <- c("gm_depth_index()", "gm_polsby_popper_index()", "gm_reock_index()", "gm_detour_index()")
+for (k in seq_along(idx_names)) {
+  sub <- conv[conv$index == idx_names[k], ]
+  yr <- range(c(sub$raw, sub$fixed, 1))
+  plot(sub$radius, sub$raw, type = "b", pch = 17, col = "#b3590a", lwd = 2, cex = 1.2,
+       ylim = yr, xlab = "disk radius (cells)", ylab = "index value", main = titles[k], log = "x")
+  lines(sub$radius, sub$fixed, type = "b", pch = 16, col = "#1a3d6b", lwd = 2, cex = 1.2)
+  abline(h = 1, col = "grey50", lty = 3)
+  if (k == 1) legend("bottomleft", legend = c("raw (vs. analytical formula)", "gridmorph's actual index"),
+                      col = c("#b3590a", "#1a3d6b"), pch = c(17, 16), lwd = 2, bty = "n", cex = 0.8)
+}
+```
+
+# What this doesn't cover
+
+`gm_hull_ratio_index()` (`area / hull_area`) and `gm_exchange_index()`
+(share of a shape's own area inside a reference circle at its centroid)
+are not part of this fix, and a rasterized disk still scores a little
+below 1 on both:
+
+```{r not-covered}
+c(hull_ratio = gm_hull_ratio_index(disk)$index, exchange = gm_exchange_index(disk)$index)
+```
+
+Both are self-referential - nowhere in either formula does an external
+circle formula appear to be measured against. `gm_hull_ratio_index()`
+compares a shape to its *own* convex hull; `gm_exchange_index()` compares
+a shape to a circle built from the shape's *own* area and centroid. A
+rasterized disk's stair-step boundary genuinely isn't perfectly convex at
+the pixel level - real, tiny notches exist along it, the same way a
+coastline traced at high enough zoom genuinely isn't a smooth curve. A
+same-resolution reference disk would show the same small gap, not erase
+it, because there is nothing measured incorrectly here to begin with.
+Both converge toward 1 as resolution increases, the ordinary way any
+raster-native measurement converges toward its continuous limit.
