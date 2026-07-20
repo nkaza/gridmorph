@@ -8,7 +8,7 @@ make_disk_mask <- function(n = 61, radius = 20) {
 ## -- gm_geodesic_span_index() ---------------------------------------------
 
 test_that("a disk-like raster scores close to 1 on geodesic_span", {
-    res <- gm_geodesic_span_index(make_disk_mask(), n_points = 150, seed = 1)
+    res <- gm_geodesic_span_index(make_disk_mask(), size = 60, seed = 1)
     expect_true(is.finite(res$index))
     expect_equal(res$index, 1, tolerance = 0.1)
 })
@@ -17,7 +17,7 @@ test_that("an elongated rectangle scores much lower than a disk on geodesic_span
     r <- terra::rast(nrows = 61, ncols = 61, xmin = 0, xmax = 61, ymin = 0, ymax = 61, crs = "local")
     terra::values(r) <- 0
     r[28:33, 5:55] <- 1
-    res <- gm_geodesic_span_index(r, n_points = 100, seed = 1)
+    res <- gm_geodesic_span_index(r, size = 40, seed = 1)
     expect_lt(res$index, 0.75)
 })
 
@@ -27,9 +27,9 @@ test_that("weighted = FALSE on a continuous raster exactly reproduces the plain 
     r[10:30, 10:30] <- 1
     w <- terra::ifel(r == 1, terra::init(r, "x") + terra::init(r, "y") + 1, NA)
 
-    plain <- gm_geodesic_span_index(r, n_points = 30, seed = 1)
-    ignored <- gm_geodesic_span_index(w, weighted = FALSE, n_points = 30, seed = 1)
-    weighted <- gm_geodesic_span_index(w, weighted = TRUE, n_points = 30, seed = 1)
+    plain <- gm_geodesic_span_index(r, size = 15, seed = 1)
+    ignored <- gm_geodesic_span_index(w, weighted = FALSE, size = 15, seed = 1)
+    weighted <- gm_geodesic_span_index(w, weighted = TRUE, size = 15, seed = 1)
 
     # both routes draw from the same degenerate (constant-density) code
     # path over the same shape - bit-identical, not just statistically
@@ -51,15 +51,15 @@ test_that("a shape touching the raster's own edge gives the identical geodesic_s
     terra::values(r_margin) <- 0
     r_margin[11:31, 11:31] <- 1
 
-    res_edge <- gm_geodesic_span_index(r_edge, n_points = 20, seed = 1)
-    res_margin <- gm_geodesic_span_index(r_margin, n_points = 20, seed = 1)
+    res_edge <- gm_geodesic_span_index(r_edge, size = 15, seed = 1)
+    res_margin <- gm_geodesic_span_index(r_margin, size = 15, seed = 1)
     expect_equal(res_edge$D, res_margin$D, tolerance = 1e-10)
     expect_equal(res_edge$index, res_margin$index, tolerance = 1e-10)
 })
 
-test_that("n_points exceeding the memory/time-derived ceiling hard-stops with a clear error, geodesic_span", {
+test_that("size exceeding the memory/time-derived ceiling hard-stops with a clear error, geodesic_span", {
     r <- make_disk_mask()
-    expect_error(gm_geodesic_span_index(r, n_points = 1e12), "n_points.*exceeds")
+    expect_error(gm_geodesic_span_index(r, size = 1e12), "size.*exceeds")
 })
 
 test_that("no valid cells gives NA with a warning, not an error, geodesic_span", {
@@ -82,8 +82,8 @@ test_that("a hole punched into a disk does not crash geodesic_span and lowers th
     r <- make_disk_mask(n = 61, radius = 25)
     r_hole <- r
     r_hole[27:33, 27:33] <- NA
-    plain <- gm_geodesic_span_index(r, n_points = 80, seed = 1)
-    holed <- gm_geodesic_span_index(r_hole, n_points = 80, seed = 1)
+    plain <- gm_geodesic_span_index(r, size = 30, seed = 1)
+    holed <- gm_geodesic_span_index(r_hole, size = 30, seed = 1)
     expect_true(is.finite(holed$index))
     expect_lt(holed$n_valid_cells, plain$n_valid_cells)
 })
@@ -95,8 +95,8 @@ test_that("two disjoint parts warn with a specific reason and return NA, not a b
     r[30:35, 30:35] <- 1
     # caught by the cheap up-front .is_connected() check, before any
     # gridDist() sampling runs at all - so D_ref is NA too (never built),
-    # not finite the way it would be if only a sampled PAIR had failed
-    expect_warning(res <- gm_geodesic_span_index(r, n_points = 10, seed = 1), "more than one connected part")
+    # not finite the way it would be if only a sampled source had failed
+    expect_warning(res <- gm_geodesic_span_index(r, size = 10, seed = 1), "more than one connected part")
     expect_true(is.na(res$index))
     expect_true(is.na(res$D))
     expect_true(is.na(res$D_ref))
@@ -108,7 +108,7 @@ test_that("two disjoint parts warn with a specific reason and return NA, not a b
 ## -- gm_geodesic_chord_index() ---------------------------------------------
 
 test_that("a disk-like raster scores close to 1 on geodesic_chord", {
-    res <- gm_geodesic_chord_index(make_disk_mask(), n_points = 100, seed = 1)
+    res <- gm_geodesic_chord_index(make_disk_mask(), size = 60, seed = 1)
     expect_true(is.finite(res$index))
     expect_equal(res$index, 1, tolerance = 0.08)
 })
@@ -129,22 +129,22 @@ test_that("a shape touching the raster's own edge gives the identical geodesic_c
     terra::values(r_margin) <- 0
     r_margin[11:31, 11:31] <- 1
 
-    res_edge <- gm_geodesic_chord_index(r_edge, n_points = 20, seed = 1)
-    res_margin <- gm_geodesic_chord_index(r_margin, n_points = 20, seed = 1)
+    res_edge <- gm_geodesic_chord_index(r_edge, size = 15, seed = 1)
+    res_margin <- gm_geodesic_chord_index(r_margin, size = 15, seed = 1)
     expect_equal(res_edge$D, res_margin$D, tolerance = 1e-10)
     expect_equal(res_edge$index, res_margin$index, tolerance = 1e-10)
 })
 
-test_that("n_points exceeding the number of boundary cells warns and falls back to sampling all of them, geodesic_chord", {
+test_that("size exceeding the number of boundary cells warns and falls back to sampling all of them, geodesic_chord", {
     r <- make_disk_mask(n = 21, radius = 5)
     n_bnd <- sum(as.vector(terra::values(gridmorph:::.boundary_cells(gridmorph:::.valid_cells(r)))))
-    expect_warning(res <- gm_geodesic_chord_index(r, n_points = n_bnd + 50, seed = 1), "exceeds the number of boundary cells")
+    expect_warning(res <- gm_geodesic_chord_index(r, size = n_bnd + 50, seed = 1), "exceeds the number of boundary cells")
     expect_equal(res$n_boundary_cells, n_bnd)
 })
 
-test_that("n_points exceeding the memory/time-derived ceiling hard-stops with a clear error, geodesic_chord", {
+test_that("size exceeding the memory/time-derived ceiling hard-stops with a clear error, geodesic_chord", {
     r <- make_disk_mask()
-    expect_error(gm_geodesic_chord_index(r, n_points = 1e12), "n_points.*exceeds")
+    expect_error(gm_geodesic_chord_index(r, size = 1e12), "size.*exceeds")
 })
 
 test_that("no valid cells gives NA with a warning, not an error, geodesic_chord", {
@@ -158,7 +158,7 @@ test_that("an elongated rectangle scores lower than a disk on geodesic_chord", {
     r <- terra::rast(nrows = 61, ncols = 61, xmin = 0, xmax = 61, ymin = 0, ymax = 61, crs = "local")
     terra::values(r) <- 0
     r[28:33, 5:55] <- 1
-    res <- gm_geodesic_chord_index(r, n_points = 80, seed = 1)
+    res <- gm_geodesic_chord_index(r, size = 40, seed = 1)
     expect_lt(res$index, 0.9)
 })
 
@@ -170,7 +170,7 @@ test_that("two disjoint parts warn with a specific reason and return NA, not a b
     # caught by the cheap up-front .is_connected() check - D_ref is NA too
     # (never built), n_boundary_cells is still real (computed before the
     # connectivity check, cheap either way)
-    expect_warning(res <- gm_geodesic_chord_index(r, n_points = 10, seed = 1), "more than one connected part")
+    expect_warning(res <- gm_geodesic_chord_index(r, size = 10, seed = 1), "more than one connected part")
     expect_true(is.na(res$index))
     expect_true(is.na(res$D))
     expect_true(is.na(res$D_ref))
@@ -191,7 +191,7 @@ test_that(".is_connected() matches gridDist()'s own 8-connectivity, not 4-connec
     terra::values(r) <- NA
     r[3:5, 3:5] <- 1
     r[6:8, 6:8] <- 1
-    expect_no_warning(res <- gm_geodesic_span_index(r, n_points = 8, seed = 1))
+    expect_no_warning(res <- gm_geodesic_span_index(r, size = 8, seed = 1))
     expect_true(is.finite(res$index))
 })
 
@@ -205,30 +205,52 @@ test_that("a connectivity-disqualified shape skips the expensive sampling loop e
     r[30:35, 30:35] <- 1
     called <- 0L
     testthat::local_mocked_bindings(
-        .geodesic_pairwise_mean = function(...) { called <<- called + 1L; list(D = NA_real_, K = 0L, n_unreachable_pairs = 0L) },
+        .geodesic_source_means = function(...) { called <<- called + 1L; list(D = NA_real_, K = 0L, any_unreachable = FALSE) },
         .package = "gridmorph"
     )
-    suppressWarnings(gm_geodesic_span_index(r, n_points = 10, seed = 1))
+    suppressWarnings(gm_geodesic_span_index(r, size = 10, seed = 1))
     expect_equal(called, 0L)
 })
 
 ## -- shared helper -----------------------------------------------------
 
-test_that(".geodesic_pairwise_mean() de-duplicates repeated cell numbers before pairing", {
-    r <- make_disk_mask(n = 21, radius = 8)
+test_that(".geodesic_source_means() matches a hand-computable mean on a straight strip", {
+    # 1 row x 5 cols, cell width 1 - every move is a plain horizontal
+    # step of cost 1, so geodesic distance from the leftmost cell to
+    # cell i is exactly i - 1. Mean distance to the other 4 cells,
+    # uniformly weighted, is (1 + 2 + 3 + 4) / 4 = 2.5.
+    r <- terra::rast(nrows = 1, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 1, crs = "local")
+    terra::values(r) <- 1
     valid <- gridmorph:::.valid_cells(r)
-    cells <- which(as.vector(terra::values(valid)))[1:5]
-    with_dupe <- gridmorph:::.geodesic_pairwise_mean(valid, c(cells, cells[1]))
-    without_dupe <- gridmorph:::.geodesic_pairwise_mean(valid, cells)
-    expect_equal(with_dupe$K, without_dupe$K)
-    expect_equal(with_dupe$D, without_dupe$D)
+    uniform_w <- terra::ifel(valid, 1, NA)
+    src_cell <- terra::cellFromXY(valid, cbind(0.5, 0.5))  # leftmost cell centre
+
+    res <- gridmorph:::.geodesic_source_means(valid, src_cell, uniform_w)
+    expect_equal(res$D, 2.5, tolerance = 1e-8)
+    expect_equal(res$K, 1L)
+    expect_false(res$any_unreachable)
 })
 
-test_that(".geodesic_pairwise_mean() returns NA with K < 2 for fewer than two unique cells", {
+test_that(".geodesic_source_means() excludes a source's own cell from its own mean, even with a duplicate source", {
+    r <- terra::rast(nrows = 1, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 1, crs = "local")
+    terra::values(r) <- 1
+    valid <- gridmorph:::.valid_cells(r)
+    uniform_w <- terra::ifel(valid, 1, NA)
+    src_cell <- terra::cellFromXY(valid, cbind(0.5, 0.5))
+
+    # a repeated source cell is an ordinary repeated i.i.d. draw here (see
+    # file header), NOT de-duplicated - each occurrence still independently
+    # excludes only its own cell and contributes the same, correct h1
+    once <- gridmorph:::.geodesic_source_means(valid, src_cell, uniform_w)
+    twice <- gridmorph:::.geodesic_source_means(valid, c(src_cell, src_cell), uniform_w)
+    expect_equal(twice$D, once$D, tolerance = 1e-8)
+    expect_equal(twice$K, 2L)
+})
+
+test_that(".geodesic_source_means() returns NA with K = 0 for an empty source vector", {
     r <- make_disk_mask(n = 21, radius = 8)
     valid <- gridmorph:::.valid_cells(r)
-    cell <- which(as.vector(terra::values(valid)))[1]
-    res <- gridmorph:::.geodesic_pairwise_mean(valid, c(cell, cell))
+    res <- gridmorph:::.geodesic_source_means(valid, integer(0), valid)
     expect_true(is.na(res$D))
-    expect_equal(res$K, 1L)
+    expect_equal(res$K, 0L)
 })

@@ -87,18 +87,18 @@
 #'   * `"detour"` - [gm_detour_index()]
 #'   * `"exchange"` - [gm_exchange_index()]
 #'   * `"geodesic_span"` - [gm_geodesic_span_index()] - substantially more
-#'     expensive than every index above (`n_points` sequential
-#'     whole-raster `terra::gridDist()` calls, not `O(size)` or cheaper -
-#'     see that function's own file header) but included in `"all"`
-#'     regardless, on the reasoning that `"all"` should mean all fifteen,
-#'     not thirteen-plus-two-you-have-to-know-to-ask-for. Its own sample
-#'     size is `n_points`, a DELIBERATELY DIFFERENT argument from `size`
-#'     (see its own doc) - lower `n_points` (via `...`) for a faster
-#'     `"all"` call if this matters; passing `size` here has no effect on
-#'     it at all.
+#'     expensive than every index above (`size` sequential whole-raster
+#'     `terra::gridDist()` calls, not `O(size)` cheap point/line
+#'     operations - see that function's own file header) but included in
+#'     `"all"` regardless, on the reasoning that `"all"` should mean all
+#'     fifteen, not thirteen-plus-two-you-have-to-know-to-ask-for. Its
+#'     sample-size argument is `size`, same name and same statistical
+#'     meaning as the other four Monte Carlo indices now - but NOT the
+#'     same cost per unit: a `size` that's fast for those four can still
+#'     be far too slow, or exceed geodesic's own (much stricter)
+#'     memory/time ceiling, for this one - see `...` below.
 #'   * `"geodesic_chord"` - [gm_geodesic_chord_index()] - same cost note
-#'     and same `n_points` (not `size`) argument as `"geodesic_span"`
-#'     above.
+#'     and same `size` argument as `"geodesic_span"` above.
 #'
 #'   The first thirteen names are the same short names
 #'   `shapeindices::shape_indices()` uses, so results from the two
@@ -111,18 +111,22 @@
 #'   each named argument (e.g. `weighted` is accepted by `"depth"` through
 #'   `"radial_concentration"` and `"geodesic_span"`, silently ignored for
 #'   the six classic metrics and `"geodesic_chord"`, none of which have a
-#'   weighted form - see each's own file header for why; `size`/`seed` are
-#'   accepted by the three ORIGINAL Monte Carlo indices
-#'   (`gm_convexity_index()`/`gm_span_index()`/`gm_radial_concentration_index()`);
-#'   `n_points`/`seed` are accepted by `gm_geodesic_span_index()`/
-#'   `gm_geodesic_chord_index()` instead - a DELIBERATELY DIFFERENT
-#'   argument name from `size`, not an inconsistency: these two cost
-#'   `O(n_points * n_cells)`, not `O(size)`, so sharing one argument name
-#'   would mean an ordinary `size = 3000` call (sensible for the other
-#'   three) silently driving 3000 sequential whole-raster
-#'   `terra::gridDist()` calls too - verified directly to cause a real,
-#'   surprising slowdown before this split (see R/geodesic-index.R's own
-#'   file header); `n_bins` is accepted by `gm_depth_index()`/
+#'   weighted form - see each's own file header for why; `size`/`seed`
+#'   are accepted by all five Monte Carlo indices now, including the two
+#'   geodesic ones - same argument name AND same statistical meaning
+#'   everywhere (see R/geodesic-index.R's own file header for why this
+#'   used to need a separate `n_points` name and no longer does). Cost
+#'   per unit of `size` is NOT unified, though, and this has a real
+#'   consequence for `gm_shape_indices()` specifically: `size` is checked
+#'   against each requested index's OWN memory/time ceiling
+#'   (`.check_mc_size()`), and that check hard-stops - it does not warn
+#'   and continue - so a `size` sensible for the three cheap
+#'   point/line-based indices can still exceed `gm_geodesic_span_index()`/
+#'   `gm_geodesic_chord_index()`'s own much stricter ceiling and abort the
+#'   WHOLE call, including the indices computed before it in canonical
+#'   order, when `which` includes one of them (`"all"` does). Pick `size`
+#'   with the most expensive requested index in mind, not just the
+#'   cheapest; `n_bins` is accepted by `gm_depth_index()`/
 #'   `gm_moment_of_inertia_index()`/`gm_span_index()`/
 #'   `gm_radial_concentration_index()`/`gm_geodesic_span_index()` -
 #'   passing it explicitly overrides each of their own individual

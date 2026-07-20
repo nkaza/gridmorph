@@ -4,17 +4,16 @@
 \alias{gm_geodesic_chord_index}
 \title{Geodesic chord index for a terra raster}
 \usage{
-gm_geodesic_chord_index(rast, n_points = 40, seed = NULL)
+gm_geodesic_chord_index(rast, size = 40, seed = NULL)
 }
 \arguments{
 \item{rast}{a terra SpatRaster. The shape is derived directly from
 \code{rast}: a cell is part of the shape iff its own value is neither \code{NA}
 nor exactly \code{0} - both are holes, no separate mask argument.}
 
-\item{n_points}{number of boundary points to sample (ALL pairs among
-them are used - see \code{gm_geodesic_span_index()}'s own doc for why
-this argument is named differently from \code{gm_span_index()}'s \code{size}).
-Checked against a memory/time-derived ceiling before running.}
+\item{size}{number of boundary points to sample as sources - matches
+\code{gm_span_index()}'s own argument name and meaning. Checked against a
+memory/time-derived ceiling before running.}
 
 \item{seed}{optional RNG seed}
 }
@@ -35,18 +34,20 @@ weight by (see file header), matching \code{gm_hull_ratio_index()}/
 \code{gm_polsby_popper_index()}/etc.'s convention of omitting the argument
 entirely rather than silently ignoring it.
 
-\code{n_points} points are drawn WITHOUT replacement from the finite set of
-boundary cells (capped at however many exist, with a warning if
-\code{n_points} had to be reduced) - unlike \code{gm_geodesic_span_index()}'s own
-with-replacement interior sampling, there is no density to weight by
-here, so plain uniform sampling over a known finite population is both
-simpler and avoids any duplicate-point risk by construction. A
-deliberately different argument name from \code{gm_span_index()}'s own
-\code{size} - see \code{gm_geodesic_span_index()}'s own doc for why.
+\code{size} SOURCE points are drawn WITHOUT replacement from the finite set
+of boundary cells (capped at however many exist, with a warning if
+\code{size} had to be reduced) - a genuinely different, and still correct,
+convention from \code{gm_geodesic_span_index()}'s own with-replacement
+interior sampling: there is no density to weight by here, so plain
+uniform sampling over a known finite population is both simpler and
+avoids any duplicate-source risk by construction. Each source's own
+contribution is the exact UNWEIGHTED mean distance to every OTHER
+boundary cell (see \code{gm_geodesic_span_index()}'s own doc, and the file
+header, for why this beats sampling a partner).
 }
 \examples{
 r <- terra::rast(nrows = 40, ncols = 40, xmin = 0, xmax = 40, ymin = 0, ymax = 40, crs = "local")
 terra::values(r) <- 0
 r[10:30, 10:30] <- 1
-gm_geodesic_chord_index(r, n_points = 25, seed = 1)$index
+gm_geodesic_chord_index(r, size = 25, seed = 1)$index
 }

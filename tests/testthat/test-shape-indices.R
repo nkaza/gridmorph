@@ -7,45 +7,46 @@ make_square_mask <- function(n = 41, inset = 10) {
 
 test_that("gm_shape_indices(which = \"all\") returns all fifteen, matching direct calls exactly", {
     r <- make_square_mask()
-    # size= only reaches the three ORIGINAL Monte Carlo indices - the two
-    # geodesic ones use their own n_points= instead (deliberately
-    # decoupled, see R/geodesic-index.R's own file header) and fall back
-    # to their own default here, matched below via n_points not size
-    res <- gm_shape_indices(r, size = 2000, seed = 1)
+    # size now reaches all five Monte Carlo indices, including the two
+    # geodesic ones (see R/geodesic-index.R's own file header for why
+    # that used to need a separate n_points argument and no longer
+    # does) - kept small here purely for test speed, since each geodesic
+    # unit costs a whole-raster gridDist() sweep, not a coordinate lookup
+    res <- gm_shape_indices(r, size = 25, seed = 1)
 
     expect_equal(names(res), .ALL_GM_INDICES)
     expect_equal(unname(res["depth"]), gm_depth_index(r)$index)
     expect_equal(unname(res["moment_of_inertia"]), gm_moment_of_inertia_index(r)$index)
     expect_equal(unname(res["moment_isotropy"]), gm_moment_isotropy_index(r)$index)
     expect_equal(unname(res["directional_balance"]), gm_directional_balance_index(r)$index)
-    expect_equal(unname(res["convexity"]), gm_convexity_index(r, size = 2000, seed = 1)$index)
-    expect_equal(unname(res["span"]), gm_span_index(r, size = 2000, seed = 1)$index)
-    expect_equal(unname(res["radial_concentration"]), gm_radial_concentration_index(r, size = 2000, seed = 1)$index)
+    expect_equal(unname(res["convexity"]), gm_convexity_index(r, size = 25, seed = 1)$index)
+    expect_equal(unname(res["span"]), gm_span_index(r, size = 25, seed = 1)$index)
+    expect_equal(unname(res["radial_concentration"]), gm_radial_concentration_index(r, size = 25, seed = 1)$index)
     expect_equal(unname(res["hull_ratio"]), gm_hull_ratio_index(r)$index)
     expect_equal(unname(res["polsby_popper"]), gm_polsby_popper_index(r)$index)
     expect_equal(unname(res["width_length_ratio"]), gm_width_length_ratio_index(r)$index)
     expect_equal(unname(res["reock"]), gm_reock_index(r)$index)
     expect_equal(unname(res["detour"]), gm_detour_index(r)$index)
     expect_equal(unname(res["exchange"]), gm_exchange_index(r)$index)
-    expect_equal(unname(res["geodesic_span"]), gm_geodesic_span_index(r, seed = 1)$index)
-    expect_equal(unname(res["geodesic_chord"]), gm_geodesic_chord_index(r, seed = 1)$index)
+    expect_equal(unname(res["geodesic_span"]), gm_geodesic_span_index(r, size = 25, seed = 1)$index)
+    expect_equal(unname(res["geodesic_chord"]), gm_geodesic_chord_index(r, size = 25, seed = 1)$index)
 })
 
-test_that("which = \"all\" includes the two geodesic indices, matching direct calls with n_points=", {
+test_that("which = \"all\" includes the two geodesic indices, matching direct calls with size=", {
     r <- make_square_mask()
-    res <- gm_shape_indices(r, n_points = 30, seed = 1)
+    res <- gm_shape_indices(r, size = 30, seed = 1)
     expect_true(all(c("geodesic_span", "geodesic_chord") %in% names(res)))
     expect_equal(length(res), 15L)
-    expect_equal(unname(res["geodesic_span"]), gm_geodesic_span_index(r, n_points = 30, seed = 1)$index)
-    expect_equal(unname(res["geodesic_chord"]), gm_geodesic_chord_index(r, n_points = 30, seed = 1)$index)
+    expect_equal(unname(res["geodesic_span"]), gm_geodesic_span_index(r, size = 30, seed = 1)$index)
+    expect_equal(unname(res["geodesic_chord"]), gm_geodesic_chord_index(r, size = 30, seed = 1)$index)
 })
 
 test_that("the geodesic indices are reachable via an explicit which= request too, matching direct calls", {
     r <- make_square_mask()
-    res <- gm_shape_indices(r, which = c("hull_ratio", "geodesic_span", "geodesic_chord"), n_points = 30, seed = 1)
+    res <- gm_shape_indices(r, which = c("hull_ratio", "geodesic_span", "geodesic_chord"), size = 30, seed = 1)
     expect_equal(names(res), c("hull_ratio", "geodesic_span", "geodesic_chord"))
-    expect_equal(unname(res["geodesic_span"]), gm_geodesic_span_index(r, n_points = 30, seed = 1)$index)
-    expect_equal(unname(res["geodesic_chord"]), gm_geodesic_chord_index(r, n_points = 30, seed = 1)$index)
+    expect_equal(unname(res["geodesic_span"]), gm_geodesic_span_index(r, size = 30, seed = 1)$index)
+    expect_equal(unname(res["geodesic_chord"]), gm_geodesic_chord_index(r, size = 30, seed = 1)$index)
 })
 
 test_that("a subset via which= returns exactly (and only) those, in canonical order regardless of request order", {
@@ -74,8 +75,11 @@ test_that("weighted is forwarded to the seven weight-capable indices, ignored by
     r <- make_square_mask()
     w <- terra::ifel(r == 1, terra::init(r, "x") + terra::init(r, "y") + 1, NA)
 
-    res_weighted <- gm_shape_indices(w, weighted = TRUE, size = 2000, seed = 1)
-    res_ignored <- gm_shape_indices(w, weighted = FALSE, size = 2000, seed = 1)
+    # size kept below make_square_mask()'s own 80 boundary cells, so the
+    # geodesic pair (now also reached via this shared size) doesn't add
+    # its own "exceeds boundary cells" warning to what this test checks
+    res_weighted <- gm_shape_indices(w, weighted = TRUE, size = 30, seed = 1)
+    res_ignored <- gm_shape_indices(w, weighted = FALSE, size = 30, seed = 1)
 
     # weighted vs not should differ for the weight-capable indices...
     expect_false(isTRUE(all.equal(res_weighted["moment_of_inertia"], res_ignored["moment_of_inertia"])))
@@ -100,9 +104,12 @@ test_that("a missing CRS warns exactly once for gm_shape_indices(\"all\"), not o
     terra::values(r) <- 0
     r[6:16, 6:16] <- 1
 
+    # size kept below this 11x11 square's own 40 boundary cells, so the
+    # geodesic pair (now also reached via this shared size) doesn't add
+    # its own "exceeds boundary cells" warning to what this test checks
     warnings_seen <- character(0)
     withCallingHandlers(
-        gm_shape_indices(r, size = 200, seed = 1),
+        gm_shape_indices(r, size = 20, seed = 1),
         warning = function(w) {
             warnings_seen[length(warnings_seen) + 1] <<- conditionMessage(w)
             invokeRestart("muffleWarning")
@@ -119,7 +126,7 @@ test_that("weighted = TRUE on a categorical raster warns exactly once, not once 
 
     warnings_seen <- character(0)
     withCallingHandlers(
-        gm_shape_indices(r, weighted = TRUE, size = 200, seed = 1),
+        gm_shape_indices(r, weighted = TRUE, size = 20, seed = 1),
         warning = function(w) {
             warnings_seen[length(warnings_seen) + 1] <<- conditionMessage(w)
             invokeRestart("muffleWarning")
@@ -128,7 +135,7 @@ test_that("weighted = TRUE on a categorical raster warns exactly once, not once 
     expect_equal(length(warnings_seen), 1L)
     expect_match(warnings_seen[1], "categorical")
 
-    expect_no_warning(gm_shape_indices(r, weighted = FALSE, size = 200, seed = 1))
+    expect_no_warning(gm_shape_indices(r, weighted = FALSE, size = 20, seed = 1))
 })
 
 test_that("a geographic CRS errors immediately, before computing anything", {
@@ -155,10 +162,13 @@ test_that("every index is translation-invariant: a shape touching the raster's o
     terra::values(r_margin) <- 0
     r_margin[11:31, 11:31] <- 1  # same square, centred with a margin on every side
 
-    # "all" now includes the geodesic pair too (their own default
-    # n_points, since size= doesn't reach them - see R/geodesic-index.R's
-    # own file header for why) - one call already covers all fifteen
-    res_edge <- gm_shape_indices(r_edge, size = 2000, seed = 1)
-    res_margin <- gm_shape_indices(r_margin, size = 2000, seed = 1)
+    # "all" now includes the geodesic pair too, also reached via this same
+    # `size` (see R/geodesic-index.R's own file header) - kept small
+    # purely for test speed, since each geodesic unit costs a
+    # whole-raster gridDist() sweep; this test checks exact
+    # reproducibility under a coordinate shift with a fixed seed, not
+    # statistical convergence, so a small size doesn't weaken it
+    res_edge <- gm_shape_indices(r_edge, size = 20, seed = 1)
+    res_margin <- gm_shape_indices(r_margin, size = 20, seed = 1)
     expect_equal(res_edge, res_margin, tolerance = 1e-8)
 })

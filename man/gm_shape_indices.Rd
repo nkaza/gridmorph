@@ -29,18 +29,18 @@ function name aren't identical:
 \item \code{"detour"} - \code{\link[=gm_detour_index]{gm_detour_index()}}
 \item \code{"exchange"} - \code{\link[=gm_exchange_index]{gm_exchange_index()}}
 \item \code{"geodesic_span"} - \code{\link[=gm_geodesic_span_index]{gm_geodesic_span_index()}} - substantially more
-expensive than every index above (\code{n_points} sequential
-whole-raster \code{terra::gridDist()} calls, not \code{O(size)} or cheaper -
-see that function's own file header) but included in \code{"all"}
-regardless, on the reasoning that \code{"all"} should mean all fifteen,
-not thirteen-plus-two-you-have-to-know-to-ask-for. Its own sample
-size is \code{n_points}, a DELIBERATELY DIFFERENT argument from \code{size}
-(see its own doc) - lower \code{n_points} (via \code{...}) for a faster
-\code{"all"} call if this matters; passing \code{size} here has no effect on
-it at all.
+expensive than every index above (\code{size} sequential whole-raster
+\code{terra::gridDist()} calls, not \code{O(size)} cheap point/line
+operations - see that function's own file header) but included in
+\code{"all"} regardless, on the reasoning that \code{"all"} should mean all
+fifteen, not thirteen-plus-two-you-have-to-know-to-ask-for. Its
+sample-size argument is \code{size}, same name and same statistical
+meaning as the other four Monte Carlo indices now - but NOT the
+same cost per unit: a \code{size} that's fast for those four can still
+be far too slow, or exceed geodesic's own (much stricter)
+memory/time ceiling, for this one - see \code{...} below.
 \item \code{"geodesic_chord"} - \code{\link[=gm_geodesic_chord_index]{gm_geodesic_chord_index()}} - same cost note
-and same \code{n_points} (not \code{size}) argument as \code{"geodesic_span"}
-above.
+and same \code{size} argument as \code{"geodesic_span"} above.
 }
 
 The first thirteen names are the same short names
@@ -55,18 +55,22 @@ valid values.}
 each named argument (e.g. \code{weighted} is accepted by \code{"depth"} through
 \code{"radial_concentration"} and \code{"geodesic_span"}, silently ignored for
 the six classic metrics and \code{"geodesic_chord"}, none of which have a
-weighted form - see each's own file header for why; \code{size}/\code{seed} are
-accepted by the three ORIGINAL Monte Carlo indices
-(\code{gm_convexity_index()}/\code{gm_span_index()}/\code{gm_radial_concentration_index()});
-\code{n_points}/\code{seed} are accepted by \code{gm_geodesic_span_index()}/
-\code{gm_geodesic_chord_index()} instead - a DELIBERATELY DIFFERENT
-argument name from \code{size}, not an inconsistency: these two cost
-\code{O(n_points * n_cells)}, not \code{O(size)}, so sharing one argument name
-would mean an ordinary \code{size = 3000} call (sensible for the other
-three) silently driving 3000 sequential whole-raster
-\code{terra::gridDist()} calls too - verified directly to cause a real,
-surprising slowdown before this split (see R/geodesic-index.R's own
-file header); \code{n_bins} is accepted by \code{gm_depth_index()}/
+weighted form - see each's own file header for why; \code{size}/\code{seed}
+are accepted by all five Monte Carlo indices now, including the two
+geodesic ones - same argument name AND same statistical meaning
+everywhere (see R/geodesic-index.R's own file header for why this
+used to need a separate \code{n_points} name and no longer does). Cost
+per unit of \code{size} is NOT unified, though, and this has a real
+consequence for \code{gm_shape_indices()} specifically: \code{size} is checked
+against each requested index's OWN memory/time ceiling
+(\code{.check_mc_size()}), and that check hard-stops - it does not warn
+and continue - so a \code{size} sensible for the three cheap
+point/line-based indices can still exceed \code{gm_geodesic_span_index()}/
+\code{gm_geodesic_chord_index()}'s own much stricter ceiling and abort the
+WHOLE call, including the indices computed before it in canonical
+order, when \code{which} includes one of them (\code{"all"} does). Pick \code{size}
+with the most expensive requested index in mind, not just the
+cheapest; \code{n_bins} is accepted by \code{gm_depth_index()}/
 \code{gm_moment_of_inertia_index()}/\code{gm_span_index()}/
 \code{gm_radial_concentration_index()}/\code{gm_geodesic_span_index()} -
 passing it explicitly overrides each of their own individual

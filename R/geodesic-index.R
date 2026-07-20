@@ -67,51 +67,44 @@
 ## `weighted` argument at all, matching the six classical metrics'
 ## convention rather than the "silently ignored" one.
 ##
-## SAMPLING: K POINTS, NOT K/2 PAIRS - a real efficiency difference from
-## every other Monte Carlo index in this package. `gridDist()`'s own
-## structure (one call gives distance from ONE source to every other
-## cell) makes the usual "size/2 independent pairs" design wasteful here:
-## it would need one whole-raster `gridDist()` call PER PAIR. Instead,
-## draw K points, run `gridDist()` once per point (K calls), and read off
-## the resulting field at the other K-1 sampled points - K(K-1)/2
-## pairwise geodesic distances for K distance-transform sweeps. The
-## sample mean over all K(K-1)/2 pairs from K i.i.d. draws is still an
-## unbiased estimator of E[d(X,Y)] for i.i.d. X,Y (a U-statistic, the same
-## structure any all-pairs mean-distance estimator has). Verified fast at
-## realistic sizes: K=100 on a 1.44M-cell raster (4,950 pairs) is ~7s,
-## scaling roughly linearly in cell count per call.
+## SAMPLING: EACH SOURCE'S EXACT MEAN, NOT A SAMPLED PARTNER - the same
+## `size` convention every other Monte Carlo index in this package uses,
+## unlike an earlier version of this file which used a separate `n_points`
+## argument and paired sampled points against EACH OTHER (all K(K-1)/2
+## pairs among K draws). That design is still unbiased - a U-statistic,
+## the same construction any all-pairs mean-distance estimator has - but
+## it wastes what `gridDist()` hands you for free: one call already
+## returns the distance from its source to EVERY cell, not just to the
+## K-1 other sampled points, so reading off only those K-1 throws away
+## almost all of it. Reading off the TRUE weighted mean over every valid
+## cell instead - `.geodesic_source_means()` below - removes essentially
+## all of the target-side noise, since it's an exact reduction over the
+## already-computed field rather than a further sample from it. Verified
+## directly (`explorations/NOTES-geodesic-indices.md`): for the same
+## number of `gridDist()` calls, the old all-pairs design carried about
+## 4.4x the variance of this one, matching the theoretical U-statistic
+## variance (~4*sigma1^2/K, since each of the K points serves as both a
+## source AND a target of K-1 other points) against this design's own
+## floor (sigma1^2/K exactly, since each source's own target-side average
+## is now exact rather than estimated). `size = K` now means the same
+## thing everywhere in this package - K draws, cost and precision both
+## roughly O(1/size) - so there's no more reason for a separate argument
+## name.
 ##
-## `n_points`, NOT `size` - A DELIBERATELY DIFFERENT ARGUMENT NAME FROM
-## EVERY OTHER MONTE CARLO INDEX IN THIS PACKAGE, and a real design
-## reversal worth recording. These two indices were originally built with
-## a `size` argument too, matching `gm_span_index()`'s own naming - but
-## `gm_span_index(size = N)` draws N points forming N/2 independent
-## pairs, while `gm_geodesic_span_index(size = K)` drew K points forming
-## ALL K(K-1)/2 pairs among them: the SAME argument name meaning something
-## fundamentally different. Once `gm_shape_indices()` was changed to
-## include these two in `which = "all"` (see R/shape-indices.R's own
-## header), that collision stopped being just a documentation footnote
-## and became a real bug: `gm_shape_indices(rast, size = 3000)` - an
-## entirely ordinary call, sizing the five PRE-EXISTING Monte Carlo
-## indices sensibly - would silently ALSO feed `size = 3000` into these
-## two through the shared `...` mechanism, meaning 3000 sequential
-## whole-raster `gridDist()` calls each. Verified directly: this measurably
-## slowed down an otherwise-ordinary `gm_shape_indices()` call before the
-## rename. `n_points` decouples the two families completely - a caller
-## tuning `size` for the original five never touches these two by
-## accident, and vice versa.
-##
-## NOISE, HONESTLY: even at `n_points = 200` (verified via repeated
-## seeds), mean geodesic distance on a fixed disk carries several percent
-## of Monte Carlo noise - genuinely more than `gm_span_index()`'s own
-## Euclidean estimate at a comparable sample size, since `gridDist()`'s
-## own angular quantization adds variability on top of ordinary point-
-## sampling noise. Both the shape's own D and its reference D_ref carry
-## this noise independently (drawn from the same `seed`-derived RNG
-## stream, but two separate point clouds on two different rasters) -
-## `n_points` needs to be noticeably larger here than the Euclidean
-## indices' own `size` defaults to get a comparably precise answer, not
-## just enough to avoid raw sampling bias.
+## PER-ITERATION TEMP-FILE CLEANUP - `.geodesic_source_means()` calls
+## `.cleanup_tmpfiles()` after EVERY source's own `gridDist()` field has
+## been reduced and discarded, not just once at the calling function's own
+## `on.exit()`. Harmless overhead for the common case (a raster small
+## enough that `gridDist()`'s own output stays in memory - verified
+## directly: a 640k-cell raster produced zero temp files across 15 calls),
+## but load-bearing for a raster large enough to force `terra` to spill
+## each call's output to disk: R's own garbage collection is opportunistic,
+## not deterministic, so without this a `size`-length loop could leave
+## many whole-raster temp files sitting on disk simultaneously before the
+## outer function's own cleanup ever runs. `.cleanup_tmpfiles()` only
+## sweeps this package's own dedicated tempdir (`.onLoad()`), so calling
+## it every iteration is safe and never touches unrelated concurrent terra
+## usage elsewhere in the same session.
 ##
 ## COST CEILING: `formula = "geodesic"` in `.safe_mc_size_ceiling()`
 ## (R/utils.R) - genuinely different cost shape from `"point"`/`"line"`
@@ -119,7 +112,13 @@
 ## terra-native operation on its own - the real resource being protected
 ## is wall-clock TIME across K sequential calls, not peak memory the way
 ## the other two formulas are - see that function's own header for the
-## full reasoning).
+## full reasoning). Each call now also does an O(n_cells) weighted-mean
+## reduction over the target population on top of the `gridDist()` sweep
+## itself (replacing the old O(K) read-off against the other sampled
+## points) - comparable order to the sweep, not a new complexity class,
+## but the ceiling's own calibration constant was benchmarked against the
+## OLD per-call cost and has not been separately re-benchmarked against
+## this one.
 ##
 ## DISCONNECTED SHAPES: detected UP FRONT, before sampling, not just
 ## after. Geodesic distance is undefined (not just hard to estimate)
@@ -139,69 +138,78 @@
 ## misclassify a shape connected only through a diagonal pinch point as
 ## disconnected). Both `gm_geodesic_span_index()` and
 ## `gm_geodesic_chord_index()` call this BEFORE running the expensive
-## K-point `gridDist()` loop, so a disconnected shape returns `NA` with a
+## K-source `gridDist()` loop, so a disconnected shape returns `NA` with a
 ## warning at the cost of one cheap raster sweep, not K wasted whole-
-## raster sweeps. `.geodesic_pairwise_mean()`'s own per-pair `NaN`
+## raster sweeps. `.geodesic_source_means()`'s own per-source `NaN`
 ## tracking and `.warn_if_unreachable()` stay in place as a defensive
 ## backstop - now unreachable in ordinary use, since a confirmed single
-## connected component can never produce an unreachable sampled pair, but
+## connected component can never produce an unreachable target cell, but
 ## costs nothing to keep.
 
-#' Mean pairwise GEODESIC distance among a set of points, via K
-#' `terra::gridDist()` calls (one per point as the sole source, read off
-#' at the other K-1 points) - see file header for why this design beats
-#' one `gridDist()` call per independent pair.
+#' For each of `src_cells`, the EXACT weighted mean of its own
+#' already-computed geodesic distance field over `target_weight`'s own
+#' support (that source's own cell excluded) - see file header for why
+#' this replaces reading off a sampled partner or a handful of sampled
+#' partners: the field already holds the distance to every cell, so the
+#' true per-source mean is available for the same one `gridDist()` call a
+#' sampled partner would have cost anyway.
 #'
-#' `cells` is DE-DUPLICATED first (by cell number) - unlike
-#' `gm_span_index()`'s own size/2-independent-pairs design, EVERY pair
-#' among the K points is used here, so a duplicate point would
-#' contribute a spurious distance-0 "pair" (itself) that a fresh
-#' independent draw would essentially never produce. Achieved K (after
-#' de-duplication) is returned alongside D so callers can detect and
-#' handle a materially-reduced sample.
+#' `src_cells` is NOT de-duplicated - unlike the old all-pairs design, a
+#' repeated source cell here is just an ordinary repeated i.i.d. draw
+#' (every source's own target average already excludes its own cell
+#' regardless of what other sources were drawn), not a degenerate
+#' distance-0 self-pair.
 #'
-#' UNREACHABLE PAIRS: `terra::gridDist()` returns `NaN` (confirmed
+#' UNREACHABLE TARGETS: `terra::gridDist()` returns `NaN` (confirmed
 #' directly, not assumed) for a cell with no path to the source at all -
 #' i.e. the two points sit in different, disconnected components of
 #' `valid`. Geodesic distance genuinely has no defined value there (there
 #' is no path, not just a long one), unlike Euclidean distance, which is
 #' always finite regardless of what lies between the two points -
 #' `gm_span_index()` has no analogous failure mode. Rather than let that
-#' `NaN` propagate silently into the mean (which it otherwise would, the
-#' instant a single sampled pair straddles two components - confirmed
-#' directly on a genuinely multi-part raster, not a hypothetical), the
-#' count of unreachable pairs actually hit is tracked and returned
-#' alongside `D`, so callers can warn with a specific, honest reason
-#' instead of surfacing a bare, unexplained `NaN`.
+#' `NaN` propagate silently into a source's own mean, any target hit is
+#' tracked and returned alongside `D`, so callers can warn with a
+#' specific, honest reason instead of surfacing a bare, unexplained `NaN`.
 #' @param valid logical terra SpatRaster (TRUE = inside the shape,
 #'   traversable)
-#' @param cells integer vector of cell numbers, already confirmed to lie
-#'   on valid cells
-#' @return `list(D, K, n_unreachable_pairs)` - `D` is `NA_real_` if fewer
-#'   than 2 unique cells remain after de-duplication, or `NaN` if any
-#'   sampled pair turned out to be unreachable (`n_unreachable_pairs > 0`)
+#' @param src_cells integer vector of K source cell numbers, already
+#'   confirmed to lie on valid cells
+#' @param target_weight terra SpatRaster, weight over the target
+#'   population - the same mass raster for a weighted mean (`weighted =
+#'   TRUE` span), or a plain logical/0-1 indicator for a uniform mean over
+#'   a finite subset (chord's boundary cells). `NA` or `<= 0` cells are
+#'   excluded from every source's own mean.
+#' @return `list(D, K, any_unreachable)` - `D` is `NA_real_` if `K == 0`,
+#'   or `NaN` if any source's own target mean hit an unreachable cell
+#'   (`any_unreachable`)
 #' @noRd
-.geodesic_pairwise_mean <- function(valid, cells) {
-    cells <- unique(cells)
-    K <- length(cells)
-    if (K < 2) return(list(D = NA_real_, K = K, n_unreachable_pairs = 0L))
+.geodesic_source_means <- function(valid, src_cells, target_weight) {
+    K <- length(src_cells)
+    if (K == 0) return(list(D = NA_real_, K = 0L, any_unreachable = FALSE))
 
     base <- terra::ifel(valid, 0, NA)
     base_v <- as.vector(terra::values(base))
-    total <- 0
-    n_unreachable <- 0L
-    for (i in seq_len(K - 1)) {
+    tw_v <- as.numeric(as.vector(terra::values(target_weight)))
+    tw_v[is.na(tw_v)] <- 0
+
+    h1 <- numeric(K)
+    any_unreachable <- FALSE
+    for (i in seq_len(K)) {
         src_v <- base_v
-        src_v[cells[i]] <- 1
+        src_v[src_cells[i]] <- 1
         src <- base
         terra::values(src) <- src_v
         d <- terra::gridDist(src, target = 1)
         d_v <- as.vector(terra::values(d))
-        pair_d <- d_v[cells[(i + 1):K]]
-        n_unreachable <- n_unreachable + sum(is.nan(pair_d))
-        total <- total + sum(pair_d)
+        .cleanup_tmpfiles()
+
+        w_i <- tw_v
+        w_i[src_cells[i]] <- 0
+        keep <- w_i > 0 & !is.nan(d_v)
+        if (any(w_i > 0 & is.nan(d_v))) any_unreachable <- TRUE
+        h1[i] <- sum(d_v[keep] * w_i[keep]) / sum(w_i[keep])
     }
-    list(D = total / (K * (K - 1) / 2), K = K, n_unreachable_pairs = n_unreachable)
+    list(D = mean(h1), K = K, any_unreachable = any_unreachable)
 }
 
 #' Boundary cells of `valid` - a valid cell adjacent (8-connectivity) to
@@ -227,16 +235,16 @@
 #' as disconnected when `gridDist()` itself finds it perfectly reachable.
 #'
 #' A single `terra::patches()` sweep is `O(valid)` - cheap relative to the
-#' K sequential whole-raster `gridDist()` calls `.geodesic_pairwise_mean()`
+#' K sequential whole-raster `gridDist()` calls `.geodesic_source_means()`
 #' needs. Call this FIRST, before running that expensive loop at all,
 #' rather than discovering the same disconnected-shape fact only after
 #' paying for it (which is what a pure post-hoc NaN-count check, as in
-#' `.geodesic_pairwise_mean()`/`.warn_if_unreachable()`, would do on its
+#' `.geodesic_source_means()`/`.warn_if_unreachable()`, would do on its
 #' own). That post-hoc check stays in place regardless, as a cheap
 #' defensive backstop - once this function confirms single-component
-#' connectivity under gridDist()'s own rule, every pair within `valid` is
-#' reachable by definition of "connected component," so it should never
-#' fire again, but costs nothing to keep.
+#' connectivity under gridDist()'s own rule, every target within `valid`
+#' is reachable by definition of "connected component," so it should
+#' never fire again, but costs nothing to keep.
 #'
 #' Comparing `min == max` of the patch-ID range (rather than counting
 #' distinct IDs or taking the max alone) sidesteps `terra::patches()`'s
@@ -260,7 +268,7 @@
 #' this check comes first) - a specific, honest reason, not a bare `NaN`
 #' surfacing later. Distinct from `.warn_if_unreachable()`, which handles
 #' the (now purely defensive) case where sampling ran anyway and hit an
-#' unreachable pair - this one fires instead of ever starting that loop.
+#' unreachable target - this one fires instead of ever starting that loop.
 #' @param fn_name caller's own name, for the warning text
 #' @return invisible `NULL`
 #' @noRd
@@ -270,8 +278,8 @@
             "not defined across disconnected parts, so the index is not ",
             "defined for this shape. Unlike gm_span_index()'s own Euclidean ",
             "distance (always finite regardless of what lies between two ",
-            "points), this has no simple fix - a larger `n_points` makes an ",
-            "unreachable pair MORE likely to be sampled, not less, for a ",
+            "points), this has no simple fix - a larger `size` makes an ",
+            "unreachable target MORE likely to be sampled, not less, for a ",
             "genuinely multi-part shape.")
     invisible(NULL)
 }
@@ -318,8 +326,8 @@
     list(valid = ref_valid, weight = w)
 }
 
-#' Warn with a specific, honest reason (not a bare `NaN`) when a sampled
-#' pair turned out to be unreachable - see `.geodesic_pairwise_mean()`'s
+#' Warn with a specific, honest reason (not a bare `NaN`) when a source's
+#' own target mean hit an unreachable cell - see `.geodesic_source_means()`'s
 #' own header for why this happens (genuinely disconnected components,
 #' not a bug) and converts the resulting `D`/`K`-summary's `NaN` to this
 #' package's own `NA_real_` "not defined" convention for consistency with
@@ -329,11 +337,12 @@
 #' `.is_connected()` up front and return via `.warn_disconnected()` before
 #' ever sampling - once that check confirms the shape is a single
 #' connected component under `gridDist()`'s own connectivity rule, no
-#' sampled pair can be unreachable, so this should never actually fire for
-#' the `"shape"` side either. Kept anyway rather than removed: cheap, and
-#' guards against any mismatch between `.is_connected()`'s assumptions and
-#' `gridDist()`'s own behaviour that isn't currently known.
-#' @param res a `.geodesic_pairwise_mean()` result
+#' source's own target mean can hit an unreachable cell, so this should
+#' never actually fire for the `"shape"` side either. Kept anyway rather
+#' than removed: cheap, and guards against any mismatch between
+#' `.is_connected()`'s assumptions and `gridDist()`'s own behaviour that
+#' isn't currently known.
+#' @param res a `.geodesic_source_means()` result
 #' @param fn_name caller's own name, for the warning text
 #' @param which `"shape"` or `"reference"` - which side hit this, also
 #'   for the warning text (the reference disk is always one connected
@@ -342,15 +351,15 @@
 #' @return `res$D`, with `NaN` converted to `NA_real_`
 #' @noRd
 .warn_if_unreachable <- function(res, fn_name, which) {
-    if (res$n_unreachable_pairs > 0) {
-        warning(fn_name, "(): ", res$n_unreachable_pairs, " of the sampled ",
-                which, " point pairs were geodesically unreachable from each other ",
-                "(different, disconnected parts of the shape) - mean geodesic distance ",
-                "is not defined across disconnected parts, so the index is not defined ",
-                "for this shape. Unlike gm_span_index()'s own Euclidean distance (always ",
-                "finite regardless of what lies between two points), this has no simple ",
-                "fix - a larger `n_points` makes an unreachable pair MORE likely to be ",
-                "sampled, not less, for a genuinely multi-part shape.")
+    if (res$any_unreachable) {
+        warning(fn_name, "(): at least one sampled ", which, " source's own mean ",
+                "distance hit a geodesically unreachable cell (different, disconnected ",
+                "parts of the shape) - mean geodesic distance is not defined across ",
+                "disconnected parts, so the index is not defined for this shape. Unlike ",
+                "gm_span_index()'s own Euclidean distance (always finite regardless of ",
+                "what lies between two points), this has no simple fix - a larger `size` ",
+                "makes an unreachable target MORE likely to be sampled, not less, for a ",
+                "genuinely multi-part shape.")
         return(NA_real_)
     }
     res$D
@@ -371,32 +380,28 @@
 #' interior points never leaves it) and diverge only once concavity forces
 #' a detour.
 #'
-#' `n_points` means something DIFFERENT here than `size` does in
-#' `gm_span_index()` - a DELIBERATELY DIFFERENT ARGUMENT NAME, not an
-#' oversight, precisely to avoid this - see file header. `n_points = K`
-#' draws K points and averages ALL K(K-1)/2 pairwise distances among them
-#' (not K/2 independent pairs), so a much smaller `n_points` already
-#' gives a comparable number of pairs - but each point costs one
-#' whole-raster `terra::gridDist()` call, a substantially higher
-#' per-point cost than `gm_span_index()`'s own closed-form Euclidean
-#' distance. Checked against a memory/time-derived ceiling before running
-#' (`formula = "geodesic"`, R/utils.R); hard-stops, not a silent clamp, if
-#' exceeded.
+#' `size` draws K interior points as SOURCES; each source's own
+#' contribution is the exact weighted mean of its own `gridDist()` field
+#' (see file header for why this beats sampling a partner, and why
+#' `size` means the same thing here as it does everywhere else in this
+#' package now). Checked against a memory/time-derived ceiling before
+#' running (`formula = "geodesic"`, R/utils.R); hard-stops, not a silent
+#' clamp, if exceeded.
 #'
 #' BOTH `D` and `D_ref` carry real Monte Carlo noise - more than
 #' `gm_span_index()`'s own estimate at a comparable sample size, since
 #' `terra::gridDist()`'s own angular quantization adds variability on top
 #' of ordinary point-sampling noise (verified: several percent spread
-#' across seeds even at `n_points = 200` on a test disk). Increase
-#' `n_points` for a more precise answer; there is no way to eliminate
-#' this noise entirely the way the closed-form Euclidean reference has
-#' none.
+#' across seeds even at `size = 200` on a test disk). Increase `size` for
+#' a more precise answer; there is no way to eliminate this noise
+#' entirely the way the closed-form Euclidean reference has none.
 #' @inheritParams gm_depth_index
-#' @param n_points number of points to sample (ALL pairs among them are
-#'   used - see above, this is NOT `gm_span_index()`'s own `size`
-#'   convention, deliberately a different argument name so the two never
-#'   collide through `gm_shape_indices()`'s own shared `...`). Checked
-#'   against a memory/time-derived ceiling before running.
+#' @param size number of interior points to sample as sources - matches
+#'   `gm_span_index()`'s own argument name and meaning (see file header),
+#'   though each source costs a whole-raster `terra::gridDist()` call, a
+#'   substantially higher per-point cost than `gm_span_index()`'s own
+#'   closed-form Euclidean distance. Checked against a memory/time-derived
+#'   ceiling before running.
 #' @param seed optional RNG seed
 #' @param n_bins integer, the exact/binned threshold and bin count for the
 #'   weighted reference's concentric-rings construction - see
@@ -406,9 +411,9 @@
 #' r <- terra::rast(nrows = 40, ncols = 40, xmin = 0, xmax = 40, ymin = 0, ymax = 40, crs = "local")
 #' terra::values(r) <- 0
 #' r[10:30, 10:30] <- 1
-#' gm_geodesic_span_index(r, n_points = 25, seed = 1)$index
+#' gm_geodesic_span_index(r, size = 25, seed = 1)$index
 #' @export
-gm_geodesic_span_index <- function(rast, weighted = TRUE, n_points = 40, seed = NULL, n_bins = 100) {
+gm_geodesic_span_index <- function(rast, weighted = TRUE, size = 40, seed = NULL, n_bins = 100) {
     on.exit(.cleanup_tmpfiles(), add = TRUE)
     .check_planar_crs(rast, "gm_geodesic_span_index")
     valid <- .valid_cells(rast)
@@ -430,18 +435,18 @@ gm_geodesic_span_index <- function(rast, weighted = TRUE, n_points = 40, seed = 
                     area = area, n_valid_cells = as.integer(n_valid)))
     }
 
-    .check_mc_size(n_points, valid, formula = "geodesic", fn_name = "gm_geodesic_span_index", arg_name = "n_points")
+    .check_mc_size(size, valid, formula = "geodesic", fn_name = "gm_geodesic_span_index")
     if (!is.null(seed)) set.seed(seed)
 
-    pts <- .sample_valid_points(valid, w, max(2L, n_points))
-    cells <- terra::cellFromXY(valid, pts)
-    actual <- .geodesic_pairwise_mean(valid, cells)
+    src_pts <- .sample_valid_points(valid, w, size)
+    src_cells <- terra::cellFromXY(valid, src_pts)
+    actual <- .geodesic_source_means(valid, src_cells, w)
 
     bins <- .adaptive_density_bins(valid, w, n_bins)
     ref <- .reference_disk_raster_weighted(cell_area, bins$density, bins$count)
-    ref_pts <- .sample_valid_points(ref$valid, ref$weight, max(2L, n_points))
-    ref_cells <- terra::cellFromXY(ref$valid, ref_pts)
-    reference <- .geodesic_pairwise_mean(ref$valid, ref_cells)
+    ref_src_pts <- .sample_valid_points(ref$valid, ref$weight, size)
+    ref_src_cells <- terra::cellFromXY(ref$valid, ref_src_pts)
+    reference <- .geodesic_source_means(ref$valid, ref_src_cells, ref$weight)
 
     D <- .warn_if_unreachable(actual, "gm_geodesic_span_index", "shape")
     D_ref <- .warn_if_unreachable(reference, "gm_geodesic_span_index", "reference")
@@ -464,28 +469,29 @@ gm_geodesic_span_index <- function(rast, weighted = TRUE, n_points = 40, seed = 
 #' `gm_polsby_popper_index()`/etc.'s convention of omitting the argument
 #' entirely rather than silently ignoring it.
 #'
-#' `n_points` points are drawn WITHOUT replacement from the finite set of
-#' boundary cells (capped at however many exist, with a warning if
-#' `n_points` had to be reduced) - unlike `gm_geodesic_span_index()`'s own
-#' with-replacement interior sampling, there is no density to weight by
-#' here, so plain uniform sampling over a known finite population is both
-#' simpler and avoids any duplicate-point risk by construction. A
-#' deliberately different argument name from `gm_span_index()`'s own
-#' `size` - see `gm_geodesic_span_index()`'s own doc for why.
+#' `size` SOURCE points are drawn WITHOUT replacement from the finite set
+#' of boundary cells (capped at however many exist, with a warning if
+#' `size` had to be reduced) - a genuinely different, and still correct,
+#' convention from `gm_geodesic_span_index()`'s own with-replacement
+#' interior sampling: there is no density to weight by here, so plain
+#' uniform sampling over a known finite population is both simpler and
+#' avoids any duplicate-source risk by construction. Each source's own
+#' contribution is the exact UNWEIGHTED mean distance to every OTHER
+#' boundary cell (see `gm_geodesic_span_index()`'s own doc, and the file
+#' header, for why this beats sampling a partner).
 #' @inheritParams gm_hull_ratio_index
-#' @param n_points number of boundary points to sample (ALL pairs among
-#'   them are used - see `gm_geodesic_span_index()`'s own doc for why
-#'   this argument is named differently from `gm_span_index()`'s `size`).
-#'   Checked against a memory/time-derived ceiling before running.
+#' @param size number of boundary points to sample as sources - matches
+#'   `gm_span_index()`'s own argument name and meaning. Checked against a
+#'   memory/time-derived ceiling before running.
 #' @param seed optional RNG seed
 #' @return `list(index, D, D_ref, area, n_valid_cells, n_boundary_cells)`
 #' @examples
 #' r <- terra::rast(nrows = 40, ncols = 40, xmin = 0, xmax = 40, ymin = 0, ymax = 40, crs = "local")
 #' terra::values(r) <- 0
 #' r[10:30, 10:30] <- 1
-#' gm_geodesic_chord_index(r, n_points = 25, seed = 1)$index
+#' gm_geodesic_chord_index(r, size = 25, seed = 1)$index
 #' @export
-gm_geodesic_chord_index <- function(rast, n_points = 40, seed = NULL) {
+gm_geodesic_chord_index <- function(rast, size = 40, seed = NULL) {
     on.exit(.cleanup_tmpfiles(), add = TRUE)
     .check_planar_crs(rast, "gm_geodesic_chord_index")
     valid <- .valid_cells(rast)
@@ -514,21 +520,22 @@ gm_geodesic_chord_index <- function(rast, n_points = 40, seed = NULL) {
                     n_valid_cells = as.integer(n_valid), n_boundary_cells = n_bnd))
     }
 
-    .check_mc_size(n_points, valid, formula = "geodesic", fn_name = "gm_geodesic_chord_index", arg_name = "n_points")
-    if (n_points > n_bnd) {
-        warning("`n_points` (", n_points, ") exceeds the number of boundary cells (", n_bnd,
+    .check_mc_size(size, valid, formula = "geodesic", fn_name = "gm_geodesic_chord_index")
+    if (size > n_bnd) {
+        warning("`size` (", size, ") exceeds the number of boundary cells (", n_bnd,
                 "); sampling all ", n_bnd, " instead.")
     }
-    k <- min(n_points, n_bnd)
+    k <- min(size, n_bnd)
     if (!is.null(seed)) set.seed(seed)
 
     pick <- sample(bnd_cells, k)
-    actual <- .geodesic_pairwise_mean(valid, pick)
+    actual <- .geodesic_source_means(valid, pick, bnd)
 
     ref_valid <- .reference_disk_raster(cell_area, n_valid)
-    ref_bnd <- which(as.vector(terra::values(.boundary_cells(ref_valid))))
-    ref_pick <- sample(ref_bnd, min(k, length(ref_bnd)))
-    reference <- .geodesic_pairwise_mean(ref_valid, ref_pick)
+    ref_bnd_mask <- .boundary_cells(ref_valid)
+    ref_bnd_cells <- which(as.vector(terra::values(ref_bnd_mask)))
+    ref_pick <- sample(ref_bnd_cells, min(k, length(ref_bnd_cells)))
+    reference <- .geodesic_source_means(ref_valid, ref_pick, ref_bnd_mask)
 
     D <- .warn_if_unreachable(actual, "gm_geodesic_chord_index", "shape")
     D_ref <- .warn_if_unreachable(reference, "gm_geodesic_chord_index", "reference")

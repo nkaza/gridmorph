@@ -228,9 +228,9 @@ have no vector-package equivalent at all: `gm_geodesic_span_index()` and
 CONFINED to the shape (`terra::gridDist()`), between two random interior
 points or two random boundary points respectively, rather than a straight
 line - the raster analogue of the "Traversal Index" (Angel, Parent &
-Civco, 2010). They take `n_points`/`seed` rather than `size`/`seed` (see
-`?gm_geodesic_span_index` for why that's a deliberately different name,
-not an inconsistency), and, like the six classic metrics,
+Civco, 2010). They take the same `size`/`seed` as the three Monte Carlo
+indices above, but cost far more per unit of `size` (see
+`?gm_geodesic_span_index` for why), and, like the six classic metrics,
 `gm_geodesic_chord_index()` has no `weighted` form. Every index takes the
 raster directly - no separate mask argument - and returns a list with
 `index` plus supporting detail (area, centroid, reference geometry for
@@ -241,15 +241,18 @@ gm_convexity_index(shapes$pinwheel, size = 2000, seed = 1)$index
 gm_moment_isotropy_index(shapes$pinwheel)$index
 gm_moment_isotropy_index(shapes$dumbbell)$index
 gm_depth_index(shapes$ring)$index
-gm_geodesic_span_index(shapes$dumbbell, n_points = 60, seed = 1)$index
+gm_geodesic_span_index(shapes$dumbbell, size = 60, seed = 1)$index
 ```
 
 Running all fifteen separately means writing fifteen calls.
 `gm_shape_indices()` runs all of them (or a chosen subset via `which`) in
-one call and returns a named vector:
+one call and returns a named vector. `size` here has to serve all five
+Monte Carlo indices at once, including the two much more expensive
+geodesic ones (see `?gm_shape_indices`), so it's kept modest rather than
+reused from the `size = 2000` example above:
 
 ```{r indices-combined}
-all_results <- sapply(shapes, gm_shape_indices, size = 2000, seed = 1)
+all_results <- sapply(shapes, gm_shape_indices, size = 150, seed = 1)
 knitr::kable(format = "html", round(all_results, 3))
 ```
 
@@ -306,7 +309,7 @@ computed exactly the same way as for the five single-piece shapes. It
 does NOT hold for `geodesic_span` and `geodesic_chord`:
 
 ```{r patchy-geodesic, warning = TRUE}
-gm_geodesic_span_index(shapes$patchy, n_points = 60, seed = 1)$index
+gm_geodesic_span_index(shapes$patchy, size = 60, seed = 1)$index
 ```
 
 Geodesic distance is a path between two points, confined to the shape -
@@ -469,7 +472,7 @@ shape's own boundary, convex hull, or bounding circle alone, unaffected
 by how mass is distributed inside it. 0-valued cells are considered outside the shape regardless.
 They don't even have a `weighted` argument and when passed using `gm_shape_indices()`, it is silently ignored.
 
-# Monte Carlo indices: `size`, `n_points`, `seed`
+# Monte Carlo indices: `size`, `seed`
 
 `gm_convexity_index()`, `gm_span_index()`, and
 `gm_radial_concentration_index()` estimate their answer from a random
@@ -490,38 +493,36 @@ Larger `size` reduces sampling noise at the cost of more computation - a
 few hundred is usually enough to see a shape's rough compactness; a few
 thousand is closer to what you'd want for a final, reportable number.
 
-## `gm_geodesic_span_index()`/`gm_geodesic_chord_index()`: `n_points`, not `size`
+## `gm_geodesic_span_index()`/`gm_geodesic_chord_index()`: same `size`, very different cost
 
-The two geodesic indices are Monte Carlo too, but their own sample-size
-argument is `n_points`, not `size` - a deliberately different name, not
-an inconsistency. `size = N` draws N points and pairs them into N/2
-INDEPENDENT pairs (`gm_span_index()`'s own design, one fresh pair per
-unit of `size`). `n_points = K` instead draws K points and uses EVERY
-pairing among them - K(K-1)/2 distances from just K
-`terra::gridDist()` calls, since each call already returns the distance
-from one point to every other cell for free, so re-using each draw
-K-1 times is far cheaper than drawing fresh independent pairs would be.
-Sharing one argument name between these two conventions would mean an
-ordinary `size = 3000` call - perfectly sensible for the three indices
-above - would silently also drive 3000 sequential whole-raster
-`gridDist()` calls through `gm_shape_indices()`'s shared `...`, once the
-geodesic pair is reachable through the same call (verified directly to
-cause a real, several-second slowdown before the two argument names were
-split apart - see `?gm_geodesic_span_index`).
+The two geodesic indices are Monte Carlo too, and take the same `size`
+argument, meaning the same thing statistically: `size = K` draws K
+points and each one's own contribution is the exact mean of its own
+`terra::gridDist()` field, so precision scales with `size` the same way
+it does for the three indices above (`?gm_geodesic_span_index` has the
+full reasoning, including why an earlier version of this package used a
+separate `n_points` argument here and no longer does).
+
+What `size` does NOT unify is COST: each point here is a whole-raster
+`gridDist()` sweep, not a coordinate lookup, so it's a substantially more
+expensive index than the three above at the same `size`. This matters
+concretely for `gm_shape_indices()`: a `size` picked for those three
+(a few hundred to a few thousand) can be far too slow, or exceed this
+index's own much stricter memory/time ceiling, once it's also reached
+through `gm_shape_indices()`'s shared `...` - pick `size` with the most
+expensive requested index in mind, not just the cheapest.
 
 ```{r geodesic-monte-carlo}
-gm_geodesic_span_index(shapes$pinwheel, n_points = 40, seed = 1)$index
-gm_geodesic_span_index(shapes$pinwheel, n_points = 150, seed = 1)$index
+gm_geodesic_span_index(shapes$pinwheel, size = 40, seed = 1)$index
+gm_geodesic_span_index(shapes$pinwheel, size = 150, seed = 1)$index
 ```
 
-`n_points` needs to be noticeably larger than `size` would for comparable
-precision: `gridDist()`'s own angular quantization on a discrete grid
-adds noise on top of ordinary point-sampling noise, so both `D` and
-`D_ref` carry more Monte Carlo variability at a given sample size than
-the closed-form-reference indices above do - and each point costs a
-whole-raster sweep rather than a coordinate lookup, so `n_points` also
-has its own, much lower, memory/time-derived ceiling (`?gm_geodesic_span_index`
-again has the details).
+Even so, `D` and `D_ref` carry more Monte Carlo noise here than the
+closed-form-reference indices above do at a comparable `size`:
+`gridDist()`'s own angular quantization on a discrete grid adds
+variability on top of ordinary point-sampling noise, so getting a
+comparably precise answer needs a larger `size` than the three indices
+above would.
 
 # Morphological operators
 

@@ -666,9 +666,10 @@
     if (formula == "geodesic") {
         # gm_geodesic_span_index()/gm_geodesic_chord_index()'s own K
         # sampled points each cost one WHOLE-RASTER terra::gridDist()
-        # call (K calls total, run sequentially, each result discarded
-        # once its own K-1 pairwise distances are read off) - genuinely a
-        # different cost shape from "point"/"line" above: each individual
+        # call (K calls total, run sequentially, each result reduced to
+        # that source's own exact target-weighted mean and discarded
+        # immediately) - genuinely a different cost shape from
+        # "point"/"line" above: each individual
         # call is itself already a chunk-safe, terra-native operation (the
         # same way gm_depth_index()'s own single terra::distance() call
         # needs no ceiling at all), so the real resource being protected
@@ -699,13 +700,13 @@
 }
 
 #' Hard-stop (not a silent clamp) if `size` exceeds the memory-derived
-#' ceiling - consistent with every other ceiling in this package.
+#' ceiling - consistent with every other ceiling in this package. Every
+#' Monte Carlo index in this package (including the two geodesic ones)
+#' now calls this with its own `size` argument under this same name -
+#' see R/geodesic-index.R's own file header for why that used to be a
+#' separate `n_points` convention and no longer needs to be.
 #' @param arg_name the caller's own argument name for `size` in its error
-#'   message - `"size"` for every caller except `gm_geodesic_span_index()`/
-#'   `gm_geodesic_chord_index()`, which call this with their own
-#'   `n_points` value under a deliberately different argument name (see
-#'   R/geodesic-index.R's own file header for why) and need the error
-#'   text to say so, not "size"
+#'   message - `"size"` for every current caller
 #' @noRd
 .check_mc_size <- function(size, valid, formula, fn_name, arg_name = "size") {
     ceiling_size <- .safe_mc_size_ceiling(valid, formula = formula)
