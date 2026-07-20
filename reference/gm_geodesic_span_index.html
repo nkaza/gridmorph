@@ -25,7 +25,7 @@ a detour."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">gridmorph</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,7 +75,7 @@ a detour.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">gm_geodesic_span_index</span><span class="op">(</span></span>
 <span>  <span class="va">rast</span>,</span>
 <span>  weighted <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  n_points <span class="op">=</span> <span class="fl">40</span>,</span>
+<span>  size <span class="op">=</span> <span class="fl">40</span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_bins <span class="op">=</span> <span class="fl">100</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -108,12 +108,13 @@ This check never fires on non-categorical (including plain binary
 0/1) rasters, so <code>weighted = TRUE</code> is always safe there.</p></dd>
 
 
-<dt id="arg-n-points">n_points<a class="anchor" aria-label="anchor" href="#arg-n-points"></a></dt>
-<dd><p>number of points to sample (ALL pairs among them are
-used - see above, this is NOT <code><a href="gm_span_index.html">gm_span_index()</a></code>'s own <code>size</code>
-convention, deliberately a different argument name so the two never
-collide through <code><a href="gm_shape_indices.html">gm_shape_indices()</a></code>'s own shared <code>...</code>). Checked
-against a memory/time-derived ceiling before running.</p></dd>
+<dt id="arg-size">size<a class="anchor" aria-label="anchor" href="#arg-size"></a></dt>
+<dd><p>number of interior points to sample as sources - matches
+<code><a href="gm_span_index.html">gm_span_index()</a></code>'s own argument name and meaning (see file header),
+though each source costs a whole-raster <code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">terra::gridDist()</a></code> call, a
+substantially higher per-point cost than <code><a href="gm_span_index.html">gm_span_index()</a></code>'s own
+closed-form Euclidean distance. Checked against a memory/time-derived
+ceiling before running.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
@@ -132,25 +133,20 @@ weighted reference's concentric-rings construction - see
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><code>n_points</code> means something DIFFERENT here than <code>size</code> does in
-<code><a href="gm_span_index.html">gm_span_index()</a></code> - a DELIBERATELY DIFFERENT ARGUMENT NAME, not an
-oversight, precisely to avoid this - see file header. <code>n_points = K</code>
-draws K points and averages ALL K(K-1)/2 pairwise distances among them
-(not K/2 independent pairs), so a much smaller <code>n_points</code> already
-gives a comparable number of pairs - but each point costs one
-whole-raster <code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">terra::gridDist()</a></code> call, a substantially higher
-per-point cost than <code><a href="gm_span_index.html">gm_span_index()</a></code>'s own closed-form Euclidean
-distance. Checked against a memory/time-derived ceiling before running
-(<code>formula = "geodesic"</code>, R/utils.R); hard-stops, not a silent clamp, if
-exceeded.</p>
+    <p><code>size</code> draws K interior points as SOURCES; each source's own
+contribution is the exact weighted mean of its own <code>gridDist()</code> field
+(see file header for why this beats sampling a partner, and why
+<code>size</code> means the same thing here as it does everywhere else in this
+package now). Checked against a memory/time-derived ceiling before
+running (<code>formula = "geodesic"</code>, R/utils.R); hard-stops, not a silent
+clamp, if exceeded.</p>
 <p>BOTH <code>D</code> and <code>D_ref</code> carry real Monte Carlo noise - more than
 <code><a href="gm_span_index.html">gm_span_index()</a></code>'s own estimate at a comparable sample size, since
 <code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">terra::gridDist()</a></code>'s own angular quantization adds variability on top
 of ordinary point-sampling noise (verified: several percent spread
-across seeds even at <code>n_points = 200</code> on a test disk). Increase
-<code>n_points</code> for a more precise answer; there is no way to eliminate
-this noise entirely the way the closed-form Euclidean reference has
-none.</p>
+across seeds even at <code>size = 200</code> on a test disk). Increase <code>size</code> for
+a more precise answer; there is no way to eliminate this noise
+entirely the way the closed-form Euclidean reference has none.</p>
     </div>
 
     <div class="section level2">
@@ -158,8 +154,8 @@ none.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span>nrows <span class="op">=</span> <span class="fl">40</span>, ncols <span class="op">=</span> <span class="fl">40</span>, xmin <span class="op">=</span> <span class="fl">0</span>, xmax <span class="op">=</span> <span class="fl">40</span>, ymin <span class="op">=</span> <span class="fl">0</span>, ymax <span class="op">=</span> <span class="fl">40</span>, crs <span class="op">=</span> <span class="st">"local"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">r</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fl">0</span></span></span>
 <span class="r-in"><span><span class="va">r</span><span class="op">[</span><span class="fl">10</span><span class="op">:</span><span class="fl">30</span>, <span class="fl">10</span><span class="op">:</span><span class="fl">30</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span></span></span>
-<span class="r-in"><span><span class="fu">gm_geodesic_span_index</span><span class="op">(</span><span class="va">r</span>, n_points <span class="op">=</span> <span class="fl">25</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">index</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.9199875</span>
+<span class="r-in"><span><span class="fu">gm_geodesic_span_index</span><span class="op">(</span><span class="va">r</span>, size <span class="op">=</span> <span class="fl">25</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">index</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.9523234</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

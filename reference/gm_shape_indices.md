@@ -65,22 +65,22 @@ gm_shape_indices(rast, which = "all", ...)
 
   - `"geodesic_span"` -
     [`gm_geodesic_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_span_index.md) -
-    substantially more expensive than every index above (`n_points`
+    substantially more expensive than every index above (`size`
     sequential whole-raster
     [`terra::gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)
-    calls, not `O(size)` or cheaper - see that function's own file
-    header) but included in `"all"` regardless, on the reasoning that
-    `"all"` should mean all fifteen, not
-    thirteen-plus-two-you-have-to-know-to-ask-for. Its own sample size
-    is `n_points`, a DELIBERATELY DIFFERENT argument from `size` (see
-    its own doc) - lower `n_points` (via `...`) for a faster `"all"`
-    call if this matters; passing `size` here has no effect on it at
-    all.
+    calls, not `O(size)` cheap point/line operations - see that
+    function's own file header) but included in `"all"` regardless, on
+    the reasoning that `"all"` should mean all fifteen, not
+    thirteen-plus-two-you-have-to-know-to-ask-for. Its sample-size
+    argument is `size`, same name and same statistical meaning as the
+    other four Monte Carlo indices now - but NOT the same cost per unit:
+    a `size` that's fast for those four can still be far too slow, or
+    exceed geodesic's own (much stricter) memory/time ceiling, for this
+    one - see `...` below.
 
   - `"geodesic_chord"` -
     [`gm_geodesic_chord_index()`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_chord_index.md) -
-    same cost note and same `n_points` (not `size`) argument as
-    `"geodesic_span"` above.
+    same cost note and same `size` argument as `"geodesic_span"` above.
 
   The first thirteen names are the same short names
   [`shapeindices::shape_indices()`](https://nkaza.github.io/shapeindices/reference/shape_indices.html)
@@ -97,20 +97,22 @@ gm_shape_indices(rast, which = "all", ...)
   `"radial_concentration"` and `"geodesic_span"`, silently ignored for
   the six classic metrics and `"geodesic_chord"`, none of which have a
   weighted form - see each's own file header for why; `size`/`seed` are
-  accepted by the three ORIGINAL Monte Carlo indices
-  ([`gm_convexity_index()`](https://nkaza.github.io/gridmorph/reference/gm_convexity_index.md)/[`gm_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_span_index.md)/[`gm_radial_concentration_index()`](https://nkaza.github.io/gridmorph/reference/gm_radial_concentration_index.md));
-  `n_points`/`seed` are accepted by
+  accepted by all five Monte Carlo indices now, including the two
+  geodesic ones - same argument name AND same statistical meaning
+  everywhere (see R/geodesic-index.R's own file header for why this used
+  to need a separate `n_points` name and no longer does). Cost per unit
+  of `size` is NOT unified, though, and this has a real consequence for
+  `gm_shape_indices()` specifically: `size` is checked against each
+  requested index's OWN memory/time ceiling (`.check_mc_size()`), and
+  that check hard-stops - it does not warn and continue - so a `size`
+  sensible for the three cheap point/line-based indices can still exceed
   [`gm_geodesic_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_span_index.md)/
-  [`gm_geodesic_chord_index()`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_chord_index.md)
-  instead - a DELIBERATELY DIFFERENT argument name from `size`, not an
-  inconsistency: these two cost `O(n_points * n_cells)`, not `O(size)`,
-  so sharing one argument name would mean an ordinary `size = 3000` call
-  (sensible for the other three) silently driving 3000 sequential
-  whole-raster
-  [`terra::gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)
-  calls too - verified directly to cause a real, surprising slowdown
-  before this split (see R/geodesic-index.R's own file header); `n_bins`
-  is accepted by
+  [`gm_geodesic_chord_index()`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_chord_index.md)'s
+  own much stricter ceiling and abort the WHOLE call, including the
+  indices computed before it in canonical order, when `which` includes
+  one of them (`"all"` does). Pick `size` with the most expensive
+  requested index in mind, not just the cheapest; `n_bins` is accepted
+  by
   [`gm_depth_index()`](https://nkaza.github.io/gridmorph/reference/gm_depth_index.md)/
   [`gm_moment_of_inertia_index()`](https://nkaza.github.io/gridmorph/reference/gm_moment_of_inertia_index.md)/[`gm_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_span_index.md)/
   [`gm_radial_concentration_index()`](https://nkaza.github.io/gridmorph/reference/gm_radial_concentration_index.md)/[`gm_geodesic_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_span_index.md) -
@@ -130,6 +132,7 @@ r <- terra::rast(nrows = 40, ncols = 40, xmin = 0, xmax = 40, ymin = 0, ymax = 4
 terra::values(r) <- 0
 r[10:30, 10:30] <- 1
 gm_shape_indices(r, size = 1000, seed = 1)
+#> Warning: `size` (1000) exceeds the number of boundary cells (80); sampling all 80 instead.
 #>                depth    moment_of_inertia      moment_isotropy 
 #>            0.9340579            0.9571000            1.0000000 
 #>  directional_balance            convexity                 span 
@@ -139,7 +142,7 @@ gm_shape_indices(r, size = 1000, seed = 1)
 #>   width_length_ratio                reock               detour 
 #>            1.0000000            0.6979405            0.9150637 
 #>             exchange        geodesic_span       geodesic_chord 
-#>            0.9092971            0.8488987            0.9686795 
+#>            0.9092971            0.9788181            0.9733866 
 
 # a subset
 gm_shape_indices(r, which = c("hull_ratio", "polsby_popper", "reock"))

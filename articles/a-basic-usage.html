@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gridmorph</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -240,7 +240,7 @@
 </section><section class="section level2" data-number="2"><h2 data-number="2" id="the-fifteen-indices">
 <span class="header-section-number">2</span> The fifteen indices<a class="anchor" aria-label="anchor" href="#the-fifteen-indices"></a>
 </h2>
-<p>Each index has its own function - <code><a href="../reference/gm_depth_index.html">gm_depth_index()</a></code>, <code><a href="../reference/gm_moment_of_inertia_index.html">gm_moment_of_inertia_index()</a></code>, <code><a href="../reference/gm_moment_isotropy_index.html">gm_moment_isotropy_index()</a></code>, <code><a href="../reference/gm_directional_balance_index.html">gm_directional_balance_index()</a></code>, <code><a href="../reference/gm_convexity_index.html">gm_convexity_index()</a></code>, <code><a href="../reference/gm_span_index.html">gm_span_index()</a></code>, <code><a href="../reference/gm_radial_concentration_index.html">gm_radial_concentration_index()</a></code> (Monte Carlo, drawn from the raster’s own valid cells), plus <code><a href="../reference/gm_hull_ratio_index.html">gm_hull_ratio_index()</a></code>, <code><a href="../reference/gm_polsby_popper_index.html">gm_polsby_popper_index()</a></code>, <code><a href="../reference/gm_width_length_ratio_index.html">gm_width_length_ratio_index()</a></code>, <code><a href="../reference/gm_reock_index.html">gm_reock_index()</a></code>, <code><a href="../reference/gm_detour_index.html">gm_detour_index()</a></code>, and <code><a href="../reference/gm_exchange_index.html">gm_exchange_index()</a></code> (classic redistricting-literature metrics: each needs only the shape’s own footprint, convex hull, or minimum bounding circle) - the same thirteen <code>shapeindices</code> computes on a polygon. Two more have no vector-package equivalent at all: <code><a href="../reference/gm_geodesic_span_index.html">gm_geodesic_span_index()</a></code> and <code><a href="../reference/gm_geodesic_chord_index.html">gm_geodesic_chord_index()</a></code> measure mean distance along the shortest path CONFINED to the shape (<code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">terra::gridDist()</a></code>), between two random interior points or two random boundary points respectively, rather than a straight line - the raster analogue of the “Traversal Index” (Angel, Parent &amp; Civco, 2010). They take <code>n_points</code>/<code>seed</code> rather than <code>size</code>/<code>seed</code> (see <code><a href="../reference/gm_geodesic_span_index.html">?gm_geodesic_span_index</a></code> for why that’s a deliberately different name, not an inconsistency), and, like the six classic metrics, <code><a href="../reference/gm_geodesic_chord_index.html">gm_geodesic_chord_index()</a></code> has no <code>weighted</code> form. Every index takes the raster directly - no separate mask argument - and returns a list with <code>index</code> plus supporting detail (area, centroid, reference geometry for plotting, and so on). Called directly on a shape:</p>
+<p>Each index has its own function - <code><a href="../reference/gm_depth_index.html">gm_depth_index()</a></code>, <code><a href="../reference/gm_moment_of_inertia_index.html">gm_moment_of_inertia_index()</a></code>, <code><a href="../reference/gm_moment_isotropy_index.html">gm_moment_isotropy_index()</a></code>, <code><a href="../reference/gm_directional_balance_index.html">gm_directional_balance_index()</a></code>, <code><a href="../reference/gm_convexity_index.html">gm_convexity_index()</a></code>, <code><a href="../reference/gm_span_index.html">gm_span_index()</a></code>, <code><a href="../reference/gm_radial_concentration_index.html">gm_radial_concentration_index()</a></code> (Monte Carlo, drawn from the raster’s own valid cells), plus <code><a href="../reference/gm_hull_ratio_index.html">gm_hull_ratio_index()</a></code>, <code><a href="../reference/gm_polsby_popper_index.html">gm_polsby_popper_index()</a></code>, <code><a href="../reference/gm_width_length_ratio_index.html">gm_width_length_ratio_index()</a></code>, <code><a href="../reference/gm_reock_index.html">gm_reock_index()</a></code>, <code><a href="../reference/gm_detour_index.html">gm_detour_index()</a></code>, and <code><a href="../reference/gm_exchange_index.html">gm_exchange_index()</a></code> (classic redistricting-literature metrics: each needs only the shape’s own footprint, convex hull, or minimum bounding circle) - the same thirteen <code>shapeindices</code> computes on a polygon. Two more have no vector-package equivalent at all: <code><a href="../reference/gm_geodesic_span_index.html">gm_geodesic_span_index()</a></code> and <code><a href="../reference/gm_geodesic_chord_index.html">gm_geodesic_chord_index()</a></code> measure mean distance along the shortest path CONFINED to the shape (<code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">terra::gridDist()</a></code>), between two random interior points or two random boundary points respectively, rather than a straight line - the raster analogue of the “Traversal Index” (Angel, Parent &amp; Civco, 2010). They take the same <code>size</code>/<code>seed</code> as the three Monte Carlo indices above, but cost far more per unit of <code>size</code> (see <code><a href="../reference/gm_geodesic_span_index.html">?gm_geodesic_span_index</a></code> for why), and, like the six classic metrics, <code><a href="../reference/gm_geodesic_chord_index.html">gm_geodesic_chord_index()</a></code> has no <code>weighted</code> form. Every index takes the raster directly - no separate mask argument - and returns a list with <code>index</code> plus supporting detail (area, centroid, reference geometry for plotting, and so on). Called directly on a shape:</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/gm_convexity_index.html">gm_convexity_index</a></span><span class="op">(</span><span class="va">shapes</span><span class="op">$</span><span class="va">pinwheel</span>, size <span class="op">=</span> <span class="fl">2000</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">index</span></span></code></pre></div>
@@ -263,15 +263,15 @@
 <pre><code>[1] 0.4249337</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/gm_geodesic_span_index.html">gm_geodesic_span_index</a></span><span class="op">(</span><span class="va">shapes</span><span class="op">$</span><span class="va">dumbbell</span>, n_points <span class="op">=</span> <span class="fl">60</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">index</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/gm_geodesic_span_index.html">gm_geodesic_span_index</a></span><span class="op">(</span><span class="va">shapes</span><span class="op">$</span><span class="va">dumbbell</span>, size <span class="op">=</span> <span class="fl">60</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">index</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.6455172</code></pre>
+<pre><code>[1] 0.6632309</code></pre>
 </div>
 </div>
-<p>Running all fifteen separately means writing fifteen calls. <code><a href="../reference/gm_shape_indices.html">gm_shape_indices()</a></code> runs all of them (or a chosen subset via <code>which</code>) in one call and returns a named vector:</p>
+<p>Running all fifteen separately means writing fifteen calls. <code><a href="../reference/gm_shape_indices.html">gm_shape_indices()</a></code> runs all of them (or a chosen subset via <code>which</code>) in one call and returns a named vector. <code>size</code> here has to serve all five Monte Carlo indices at once, including the two much more expensive geodesic ones (see <code><a href="../reference/gm_shape_indices.html">?gm_shape_indices</a></code>), so it’s kept modest rather than reused from the <code>size = 2000</code> example above:</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">all_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">shapes</span>, <span class="va">gm_shape_indices</span>, size <span class="op">=</span> <span class="fl">2000</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">all_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">shapes</span>, <span class="va">gm_shape_indices</span>, size <span class="op">=</span> <span class="fl">150</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span>format <span class="op">=</span> <span class="st">"html"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">all_results</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <table class="table caption-top">
@@ -292,7 +292,7 @@
 <td style="text-align: right;">0.665</td>
 <td style="text-align: right;">0.425</td>
 <td style="text-align: right;">0.675</td>
-<td style="text-align: right;">0.422</td>
+<td style="text-align: right;">0.395</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">moment_of_inertia</td>
@@ -301,7 +301,7 @@
 <td style="text-align: right;">0.411</td>
 <td style="text-align: right;">0.523</td>
 <td style="text-align: right;">0.689</td>
-<td style="text-align: right;">0.262</td>
+<td style="text-align: right;">0.187</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">moment_isotropy</td>
@@ -310,7 +310,7 @@
 <td style="text-align: right;">0.093</td>
 <td style="text-align: right;">1.000</td>
 <td style="text-align: right;">0.400</td>
-<td style="text-align: right;">0.281</td>
+<td style="text-align: right;">0.119</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">directional_balance</td>
@@ -319,34 +319,34 @@
 <td style="text-align: right;">0.999</td>
 <td style="text-align: right;">1.000</td>
 <td style="text-align: right;">0.926</td>
-<td style="text-align: right;">0.779</td>
+<td style="text-align: right;">0.737</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">convexity</td>
 <td style="text-align: right;">1.000</td>
-<td style="text-align: right;">0.784</td>
-<td style="text-align: right;">0.888</td>
-<td style="text-align: right;">0.681</td>
-<td style="text-align: right;">0.950</td>
-<td style="text-align: right;">0.763</td>
+<td style="text-align: right;">0.794</td>
+<td style="text-align: right;">0.897</td>
+<td style="text-align: right;">0.594</td>
+<td style="text-align: right;">0.941</td>
+<td style="text-align: right;">0.663</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">span</td>
-<td style="text-align: right;">0.984</td>
-<td style="text-align: right;">0.731</td>
-<td style="text-align: right;">0.672</td>
-<td style="text-align: right;">0.722</td>
-<td style="text-align: right;">0.839</td>
-<td style="text-align: right;">0.594</td>
+<td style="text-align: right;">1.014</td>
+<td style="text-align: right;">0.806</td>
+<td style="text-align: right;">0.662</td>
+<td style="text-align: right;">0.711</td>
+<td style="text-align: right;">0.787</td>
+<td style="text-align: right;">0.478</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">radial_concentration</td>
-<td style="text-align: right;">1.003</td>
-<td style="text-align: right;">0.735</td>
-<td style="text-align: right;">0.642</td>
-<td style="text-align: right;">0.694</td>
-<td style="text-align: right;">0.840</td>
-<td style="text-align: right;">0.636</td>
+<td style="text-align: right;">1.023</td>
+<td style="text-align: right;">0.750</td>
+<td style="text-align: right;">0.661</td>
+<td style="text-align: right;">0.727</td>
+<td style="text-align: right;">0.838</td>
+<td style="text-align: right;">0.501</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">hull_ratio</td>
@@ -355,7 +355,7 @@
 <td style="text-align: right;">0.710</td>
 <td style="text-align: right;">0.666</td>
 <td style="text-align: right;">0.803</td>
-<td style="text-align: right;">0.334</td>
+<td style="text-align: right;">0.363</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">polsby_popper</td>
@@ -364,7 +364,7 @@
 <td style="text-align: right;">0.465</td>
 <td style="text-align: right;">0.280</td>
 <td style="text-align: right;">0.593</td>
-<td style="text-align: right;">0.122</td>
+<td style="text-align: right;">0.111</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">width_length_ratio</td>
@@ -373,7 +373,7 @@
 <td style="text-align: right;">0.407</td>
 <td style="text-align: right;">1.000</td>
 <td style="text-align: right;">1.000</td>
-<td style="text-align: right;">0.704</td>
+<td style="text-align: right;">0.747</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">reock</td>
@@ -382,7 +382,7 @@
 <td style="text-align: right;">0.354</td>
 <td style="text-align: right;">0.687</td>
 <td style="text-align: right;">0.447</td>
-<td style="text-align: right;">0.144</td>
+<td style="text-align: right;">0.188</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">detour</td>
@@ -391,7 +391,7 @@
 <td style="text-align: right;">0.747</td>
 <td style="text-align: right;">0.828</td>
 <td style="text-align: right;">0.806</td>
-<td style="text-align: right;">0.496</td>
+<td style="text-align: right;">0.539</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">exchange</td>
@@ -400,24 +400,24 @@
 <td style="text-align: right;">0.438</td>
 <td style="text-align: right;">0.550</td>
 <td style="text-align: right;">0.726</td>
-<td style="text-align: right;">0.571</td>
+<td style="text-align: right;">0.181</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">geodesic_span</td>
-<td style="text-align: right;">1.087</td>
-<td style="text-align: right;">0.564</td>
-<td style="text-align: right;">0.706</td>
-<td style="text-align: right;">0.670</td>
-<td style="text-align: right;">0.746</td>
+<td style="text-align: right;">0.999</td>
+<td style="text-align: right;">0.603</td>
+<td style="text-align: right;">0.681</td>
+<td style="text-align: right;">0.694</td>
+<td style="text-align: right;">0.823</td>
 <td style="text-align: right;">NA</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">geodesic_chord</td>
-<td style="text-align: right;">0.992</td>
-<td style="text-align: right;">0.811</td>
-<td style="text-align: right;">0.841</td>
-<td style="text-align: right;">0.861</td>
-<td style="text-align: right;">0.930</td>
+<td style="text-align: right;">0.996</td>
+<td style="text-align: right;">0.774</td>
+<td style="text-align: right;">0.843</td>
+<td style="text-align: right;">0.877</td>
+<td style="text-align: right;">0.913</td>
 <td style="text-align: right;">NA</td>
 </tr>
 </tbody>
@@ -443,21 +443,21 @@
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/patches.html" class="external-link">patches</a></span><span class="op">(</span><span class="va">shapes</span><span class="op">$</span><span class="va">patchy</span>, directions <span class="op">=</span> <span class="fl">8</span>, zeroAsNA <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/global.html" class="external-link">global</a></span><span class="op">(</span><span class="va">p</span>, <span class="st">"max"</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>  <span class="co"># number of disjoint pieces</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 6</code></pre>
+<pre><code>[1] 11</code></pre>
 </div>
 </div>
 <p>That “no special machinery” claim holds for thirteen of the fifteen indices - already visible in the results table above, where <code>patchy</code> got an ordinary numeric score on every area/moment/hull/boundary-based index, computed exactly the same way as for the five single-piece shapes. It does NOT hold for <code>geodesic_span</code> and <code>geodesic_chord</code>:</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/gm_geodesic_span_index.html">gm_geodesic_span_index</a></span><span class="op">(</span><span class="va">shapes</span><span class="op">$</span><span class="va">patchy</span>, n_points <span class="op">=</span> <span class="fl">60</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">index</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/gm_geodesic_span_index.html">gm_geodesic_span_index</a></span><span class="op">(</span><span class="va">shapes</span><span class="op">$</span><span class="va">patchy</span>, size <span class="op">=</span> <span class="fl">60</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">index</span></span></code></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning in .warn_disconnected("gm_geodesic_span_index"):
 gm_geodesic_span_index(): the shape has more than one connected part
 (different, disconnected pieces) - mean geodesic distance is not defined across
 disconnected parts, so the index is not defined for this shape. Unlike
 gm_span_index()'s own Euclidean distance (always finite regardless of what lies
-between two points), this has no simple fix - a larger `n_points` makes an
-unreachable pair MORE likely to be sampled, not less, for a genuinely
+between two points), this has no simple fix - a larger `size` makes an
+unreachable target MORE likely to be sampled, not less, for a genuinely
 multi-part shape.</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
@@ -505,33 +505,33 @@ multi-part shape.</code></pre>
 <tbody>
 <tr class="odd">
 <td style="text-align: right;">2</td>
-<td style="text-align: right;">1.55</td>
-<td style="text-align: right;">2.05</td>
+<td style="text-align: right;">1.60</td>
+<td style="text-align: right;">1.71</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">5</td>
 <td style="text-align: right;">1.55</td>
-<td style="text-align: right;">2.21</td>
+<td style="text-align: right;">2.46</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">10</td>
-<td style="text-align: right;">1.54</td>
-<td style="text-align: right;">2.85</td>
+<td style="text-align: right;">1.57</td>
+<td style="text-align: right;">3.26</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">20</td>
 <td style="text-align: right;">1.56</td>
-<td style="text-align: right;">4.02</td>
+<td style="text-align: right;">3.88</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">40</td>
-<td style="text-align: right;">1.60</td>
-<td style="text-align: right;">5.92</td>
+<td style="text-align: right;">1.52</td>
+<td style="text-align: right;">5.83</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">80</td>
-<td style="text-align: right;">1.58</td>
-<td style="text-align: right;">7.90</td>
+<td style="text-align: right;">1.56</td>
+<td style="text-align: right;">7.89</td>
 </tr>
 </tbody>
 </table>
@@ -559,17 +559,17 @@ multi-part shape.</code></pre>
 <tbody>
 <tr class="odd">
 <td style="text-align: right;">2</td>
-<td style="text-align: right;">238</td>
-<td style="text-align: right;">0.72</td>
+<td style="text-align: right;">264</td>
+<td style="text-align: right;">0.81</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">10</td>
-<td style="text-align: right;">574</td>
-<td style="text-align: right;">1.98</td>
+<td style="text-align: right;">516</td>
+<td style="text-align: right;">1.94</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">40</td>
-<td style="text-align: right;">986</td>
+<td style="text-align: right;">1036</td>
 <td style="text-align: right;">4.42</td>
 </tr>
 </tbody>
@@ -608,9 +608,9 @@ multi-part shape.</code></pre>
 </div>
 <p><code>plain</code> and <code>ignored</code> match exactly - <code>weighted = FALSE</code> on a continuous raster reproduces the plain binary-mask index precisely, not approximately, since it substitutes a constant mass over every valid cell regardless of the raster’s own values. <code>weighted</code> differs: with more mass concentrated toward the right ball, the shape’s own effective centroid shifts, changing the moment of inertia relative to the unweighted (geometric) case.</p>
 <p><strong>One thing <code>weighted</code> does not change</strong>: the six classic metrics (<code>hull_ratio</code>, <code>polsby_popper</code>, <code>width_length_ratio</code>, <code>reock</code>, <code>detour</code>, <code>exchange</code>) have no weighted form at all - they’re properties of the shape’s own boundary, convex hull, or bounding circle alone, unaffected by how mass is distributed inside it. 0-valued cells are considered outside the shape regardless. They don’t even have a <code>weighted</code> argument and when passed using <code><a href="../reference/gm_shape_indices.html">gm_shape_indices()</a></code>, it is silently ignored.</p>
-</section><section class="section level2" data-number="5"><h2 data-number="5" id="monte-carlo-indices-size-n_points-seed">
-<span class="header-section-number">5</span> Monte Carlo indices: <code>size</code>, <code>n_points</code>, <code>seed</code>
-<a class="anchor" aria-label="anchor" href="#monte-carlo-indices-size-n_points-seed"></a>
+</section><section class="section level2" data-number="5"><h2 data-number="5" id="monte-carlo-indices-size-seed">
+<span class="header-section-number">5</span> Monte Carlo indices: <code>size</code>, <code>seed</code>
+<a class="anchor" aria-label="anchor" href="#monte-carlo-indices-size-seed"></a>
 </h2>
 <p><code><a href="../reference/gm_convexity_index.html">gm_convexity_index()</a></code>, <code><a href="../reference/gm_span_index.html">gm_span_index()</a></code>, and <code><a href="../reference/gm_radial_concentration_index.html">gm_radial_concentration_index()</a></code> estimate their answer from a random sample of points drawn from the raster’s own valid cells - there’s no practical exhaustive alternative at raster-cell counts (see <code><a href="../articles/c-comparison-with-shapeindices.html">vignette("c-comparison-with-shapeindices")</a></code> for why). <code>size</code> controls how many points are drawn (matching <code><a href="https://rspatial.github.io/terra/reference/sample.html" class="external-link">terra::spatSample()</a></code>’s own argument name); <code>seed</code> makes the draw reproducible:</p>
 <div class="cell" data-layout-align="center">
@@ -625,24 +625,24 @@ multi-part shape.</code></pre>
 </div>
 </div>
 <p>Larger <code>size</code> reduces sampling noise at the cost of more computation - a few hundred is usually enough to see a shape’s rough compactness; a few thousand is closer to what you’d want for a final, reportable number.</p>
-<section class="level2" data-number="5.1"><h3 data-number="5.1" id="gm_geodesic_span_indexgm_geodesic_chord_index-n_points-not-size">
-<span class="header-section-number">5.1</span> <code>gm_geodesic_span_index()</code>/<code>gm_geodesic_chord_index()</code>: <code>n_points</code>, not <code>size</code>
-<a class="anchor" aria-label="anchor" href="#gm_geodesic_span_indexgm_geodesic_chord_index-n_points-not-size"></a>
+<section class="level2" data-number="5.1"><h3 data-number="5.1" id="gm_geodesic_span_indexgm_geodesic_chord_index-same-size-very-different-cost">
+<span class="header-section-number">5.1</span> <code>gm_geodesic_span_index()</code>/<code>gm_geodesic_chord_index()</code>: same <code>size</code>, very different cost<a class="anchor" aria-label="anchor" href="#gm_geodesic_span_indexgm_geodesic_chord_index-same-size-very-different-cost"></a>
 </h3>
-<p>The two geodesic indices are Monte Carlo too, but their own sample-size argument is <code>n_points</code>, not <code>size</code> - a deliberately different name, not an inconsistency. <code>size = N</code> draws N points and pairs them into N/2 INDEPENDENT pairs (<code><a href="../reference/gm_span_index.html">gm_span_index()</a></code>’s own design, one fresh pair per unit of <code>size</code>). <code>n_points = K</code> instead draws K points and uses EVERY pairing among them - K(K-1)/2 distances from just K <code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">terra::gridDist()</a></code> calls, since each call already returns the distance from one point to every other cell for free, so re-using each draw K-1 times is far cheaper than drawing fresh independent pairs would be. Sharing one argument name between these two conventions would mean an ordinary <code>size = 3000</code> call - perfectly sensible for the three indices above - would silently also drive 3000 sequential whole-raster <code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">gridDist()</a></code> calls through <code><a href="../reference/gm_shape_indices.html">gm_shape_indices()</a></code>’s shared <code>...</code>, once the geodesic pair is reachable through the same call (verified directly to cause a real, several-second slowdown before the two argument names were split apart - see <code><a href="../reference/gm_geodesic_span_index.html">?gm_geodesic_span_index</a></code>).</p>
+<p>The two geodesic indices are Monte Carlo too, and take the same <code>size</code> argument, meaning the same thing statistically: <code>size = K</code> draws K points and each one’s own contribution is the exact mean of its own <code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">terra::gridDist()</a></code> field, so precision scales with <code>size</code> the same way it does for the three indices above (<code><a href="../reference/gm_geodesic_span_index.html">?gm_geodesic_span_index</a></code> has the full reasoning, including why an earlier version of this package used a separate <code>n_points</code> argument here and no longer does).</p>
+<p>What <code>size</code> does NOT unify is COST: each point here is a whole-raster <code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">gridDist()</a></code> sweep, not a coordinate lookup, so it’s a substantially more expensive index than the three above at the same <code>size</code>. This matters concretely for <code><a href="../reference/gm_shape_indices.html">gm_shape_indices()</a></code>: a <code>size</code> picked for those three (a few hundred to a few thousand) can be far too slow, or exceed this index’s own much stricter memory/time ceiling, once it’s also reached through <code><a href="../reference/gm_shape_indices.html">gm_shape_indices()</a></code>’s shared <code>...</code> - pick <code>size</code> with the most expensive requested index in mind, not just the cheapest.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/gm_geodesic_span_index.html">gm_geodesic_span_index</a></span><span class="op">(</span><span class="va">shapes</span><span class="op">$</span><span class="va">pinwheel</span>, n_points <span class="op">=</span> <span class="fl">40</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">index</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/gm_geodesic_span_index.html">gm_geodesic_span_index</a></span><span class="op">(</span><span class="va">shapes</span><span class="op">$</span><span class="va">pinwheel</span>, size <span class="op">=</span> <span class="fl">40</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">index</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.5641538</code></pre>
+<pre><code>[1] 0.5864411</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb30"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/gm_geodesic_span_index.html">gm_geodesic_span_index</a></span><span class="op">(</span><span class="va">shapes</span><span class="op">$</span><span class="va">pinwheel</span>, n_points <span class="op">=</span> <span class="fl">150</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">index</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/gm_geodesic_span_index.html">gm_geodesic_span_index</a></span><span class="op">(</span><span class="va">shapes</span><span class="op">$</span><span class="va">pinwheel</span>, size <span class="op">=</span> <span class="fl">150</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">$</span><span class="va">index</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 0.5959656</code></pre>
+<pre><code>[1] 0.6027439</code></pre>
 </div>
 </div>
-<p><code>n_points</code> needs to be noticeably larger than <code>size</code> would for comparable precision: <code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">gridDist()</a></code>’s own angular quantization on a discrete grid adds noise on top of ordinary point-sampling noise, so both <code>D</code> and <code>D_ref</code> carry more Monte Carlo variability at a given sample size than the closed-form-reference indices above do - and each point costs a whole-raster sweep rather than a coordinate lookup, so <code>n_points</code> also has its own, much lower, memory/time-derived ceiling (<code><a href="../reference/gm_geodesic_span_index.html">?gm_geodesic_span_index</a></code> again has the details).</p>
+<p>Even so, <code>D</code> and <code>D_ref</code> carry more Monte Carlo noise here than the closed-form-reference indices above do at a comparable <code>size</code>: <code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">gridDist()</a></code>’s own angular quantization on a discrete grid adds variability on top of ordinary point-sampling noise, so getting a comparably precise answer needs a larger <code>size</code> than the three indices above would.</p>
 </section></section><section class="section level2" data-number="6"><h2 data-number="6" id="morphological-operators">
 <span class="header-section-number">6</span> Morphological operators<a class="anchor" aria-label="anchor" href="#morphological-operators"></a>
 </h2>

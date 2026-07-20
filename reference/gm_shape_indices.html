@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">gridmorph</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,18 +75,18 @@ function name aren't identical:</p><ul><li><p><code>"depth"</code> - <code><a hr
 <li><p><code>"detour"</code> - <code><a href="gm_detour_index.html">gm_detour_index()</a></code></p></li>
 <li><p><code>"exchange"</code> - <code><a href="gm_exchange_index.html">gm_exchange_index()</a></code></p></li>
 <li><p><code>"geodesic_span"</code> - <code><a href="gm_geodesic_span_index.html">gm_geodesic_span_index()</a></code> - substantially more
-expensive than every index above (<code>n_points</code> sequential
-whole-raster <code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">terra::gridDist()</a></code> calls, not <code>O(size)</code> or cheaper -
-see that function's own file header) but included in <code>"all"</code>
-regardless, on the reasoning that <code>"all"</code> should mean all fifteen,
-not thirteen-plus-two-you-have-to-know-to-ask-for. Its own sample
-size is <code>n_points</code>, a DELIBERATELY DIFFERENT argument from <code>size</code>
-(see its own doc) - lower <code>n_points</code> (via <code>...</code>) for a faster
-<code>"all"</code> call if this matters; passing <code>size</code> here has no effect on
-it at all.</p></li>
+expensive than every index above (<code>size</code> sequential whole-raster
+<code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">terra::gridDist()</a></code> calls, not <code>O(size)</code> cheap point/line
+operations - see that function's own file header) but included in
+<code>"all"</code> regardless, on the reasoning that <code>"all"</code> should mean all
+fifteen, not thirteen-plus-two-you-have-to-know-to-ask-for. Its
+sample-size argument is <code>size</code>, same name and same statistical
+meaning as the other four Monte Carlo indices now - but NOT the
+same cost per unit: a <code>size</code> that's fast for those four can still
+be far too slow, or exceed geodesic's own (much stricter)
+memory/time ceiling, for this one - see <code>...</code> below.</p></li>
 <li><p><code>"geodesic_chord"</code> - <code><a href="gm_geodesic_chord_index.html">gm_geodesic_chord_index()</a></code> - same cost note
-and same <code>n_points</code> (not <code>size</code>) argument as <code>"geodesic_span"</code>
-above.</p></li>
+and same <code>size</code> argument as <code>"geodesic_span"</code> above.</p></li>
 </ul><p>The first thirteen names are the same short names
 <code><a href="https://nkaza.github.io/shapeindices/reference/shape_indices.html" class="external-link">shapeindices::shape_indices()</a></code> uses, so results from the two
 packages line up directly for those (<code>shapeindices</code> has no
@@ -101,18 +101,22 @@ valid values.</p></dd>
 each named argument (e.g. <code>weighted</code> is accepted by <code>"depth"</code> through
 <code>"radial_concentration"</code> and <code>"geodesic_span"</code>, silently ignored for
 the six classic metrics and <code>"geodesic_chord"</code>, none of which have a
-weighted form - see each's own file header for why; <code>size</code>/<code>seed</code> are
-accepted by the three ORIGINAL Monte Carlo indices
-(<code><a href="gm_convexity_index.html">gm_convexity_index()</a></code>/<code><a href="gm_span_index.html">gm_span_index()</a></code>/<code><a href="gm_radial_concentration_index.html">gm_radial_concentration_index()</a></code>);
-<code>n_points</code>/<code>seed</code> are accepted by <code><a href="gm_geodesic_span_index.html">gm_geodesic_span_index()</a></code>/
-<code><a href="gm_geodesic_chord_index.html">gm_geodesic_chord_index()</a></code> instead - a DELIBERATELY DIFFERENT
-argument name from <code>size</code>, not an inconsistency: these two cost
-<code>O(n_points * n_cells)</code>, not <code>O(size)</code>, so sharing one argument name
-would mean an ordinary <code>size = 3000</code> call (sensible for the other
-three) silently driving 3000 sequential whole-raster
-<code><a href="https://rspatial.github.io/terra/reference/gridDist.html" class="external-link">terra::gridDist()</a></code> calls too - verified directly to cause a real,
-surprising slowdown before this split (see R/geodesic-index.R's own
-file header); <code>n_bins</code> is accepted by <code><a href="gm_depth_index.html">gm_depth_index()</a></code>/
+weighted form - see each's own file header for why; <code>size</code>/<code>seed</code>
+are accepted by all five Monte Carlo indices now, including the two
+geodesic ones - same argument name AND same statistical meaning
+everywhere (see R/geodesic-index.R's own file header for why this
+used to need a separate <code>n_points</code> name and no longer does). Cost
+per unit of <code>size</code> is NOT unified, though, and this has a real
+consequence for <code>gm_shape_indices()</code> specifically: <code>size</code> is checked
+against each requested index's OWN memory/time ceiling
+(<code>.check_mc_size()</code>), and that check hard-stops - it does not warn
+and continue - so a <code>size</code> sensible for the three cheap
+point/line-based indices can still exceed <code><a href="gm_geodesic_span_index.html">gm_geodesic_span_index()</a></code>/
+<code><a href="gm_geodesic_chord_index.html">gm_geodesic_chord_index()</a></code>'s own much stricter ceiling and abort the
+WHOLE call, including the indices computed before it in canonical
+order, when <code>which</code> includes one of them (<code>"all"</code> does). Pick <code>size</code>
+with the most expensive requested index in mind, not just the
+cheapest; <code>n_bins</code> is accepted by <code><a href="gm_depth_index.html">gm_depth_index()</a></code>/
 <code><a href="gm_moment_of_inertia_index.html">gm_moment_of_inertia_index()</a></code>/<code><a href="gm_span_index.html">gm_span_index()</a></code>/
 <code><a href="gm_radial_concentration_index.html">gm_radial_concentration_index()</a></code>/<code><a href="gm_geodesic_span_index.html">gm_geodesic_span_index()</a></code> -
 passing it explicitly overrides each of their own individual
@@ -131,6 +135,7 @@ canonical order</p>
 <span class="r-in"><span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">r</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fl">0</span></span></span>
 <span class="r-in"><span><span class="va">r</span><span class="op">[</span><span class="fl">10</span><span class="op">:</span><span class="fl">30</span>, <span class="fl">10</span><span class="op">:</span><span class="fl">30</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span></span></span>
 <span class="r-in"><span><span class="fu">gm_shape_indices</span><span class="op">(</span><span class="va">r</span>, size <span class="op">=</span> <span class="fl">1000</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>`size` (1000) exceeds the number of boundary cells (80); sampling all 80 instead.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                depth    moment_of_inertia      moment_isotropy </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            0.9340579            0.9571000            1.0000000 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  directional_balance            convexity                 span </span>
@@ -140,7 +145,7 @@ canonical order</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   width_length_ratio                reock               detour </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            1.0000000            0.6979405            0.9150637 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             exchange        geodesic_span       geodesic_chord </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>            0.9092971            0.8488987            0.9686795 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            0.9092971            0.9788181            0.9733866 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># a subset</span></span></span>
 <span class="r-in"><span><span class="fu">gm_shape_indices</span><span class="op">(</span><span class="va">r</span>, which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hull_ratio"</span>, <span class="st">"polsby_popper"</span>, <span class="st">"reock"</span><span class="op">)</span><span class="op">)</span></span></span>

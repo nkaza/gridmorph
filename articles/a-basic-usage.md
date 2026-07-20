@@ -240,11 +240,11 @@ measure mean distance along the shortest path CONFINED to the shape
 ([`terra::gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)),
 between two random interior points or two random boundary points
 respectively, rather than a straight line - the raster analogue of the
-“Traversal Index” (Angel, Parent & Civco, 2010). They take
-`n_points`/`seed` rather than `size`/`seed` (see
+“Traversal Index” (Angel, Parent & Civco, 2010). They take the same
+`size`/`seed` as the three Monte Carlo indices above, but cost far more
+per unit of `size` (see
 [`?gm_geodesic_span_index`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_span_index.md)
-for why that’s a deliberately different name, not an inconsistency),
-and, like the six classic metrics,
+for why), and, like the six classic metrics,
 [`gm_geodesic_chord_index()`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_chord_index.md)
 has no `weighted` form. Every index takes the raster directly - no
 separate mask argument - and returns a list with `index` plus supporting
@@ -281,39 +281,44 @@ gm_depth_index(shapes$ring)$index
 
 ``` r
 
-gm_geodesic_span_index(shapes$dumbbell, n_points = 60, seed = 1)$index
+gm_geodesic_span_index(shapes$dumbbell, size = 60, seed = 1)$index
 ```
 
-    [1] 0.6455172
+    [1] 0.6632309
 
 Running all fifteen separately means writing fifteen calls.
 [`gm_shape_indices()`](https://nkaza.github.io/gridmorph/reference/gm_shape_indices.md)
 runs all of them (or a chosen subset via `which`) in one call and
-returns a named vector:
+returns a named vector. `size` here has to serve all five Monte Carlo
+indices at once, including the two much more expensive geodesic ones
+(see
+[`?gm_shape_indices`](https://nkaza.github.io/gridmorph/reference/gm_shape_indices.md)),
+so it’s kept modest rather than reused from the `size = 2000` example
+above:
 
 ``` r
 
-all_results <- sapply(shapes, gm_shape_indices, size = 2000, seed = 1)
+all_results <- sapply(shapes, gm_shape_indices, size = 150, seed = 1)
 knitr::kable(format = "html", round(all_results, 3))
 ```
 
 |                      |  disk | pinwheel | dumbbell |  ring |     L | patchy |
 |:---------------------|------:|---------:|---------:|------:|------:|-------:|
-| depth                | 1.001 |    0.408 |    0.665 | 0.425 | 0.675 |  0.422 |
-| moment_of_inertia    | 1.000 |    0.527 |    0.411 | 0.523 | 0.689 |  0.262 |
-| moment_isotropy      | 1.000 |    1.000 |    0.093 | 1.000 | 0.400 |  0.281 |
-| directional_balance  | 1.000 |    0.999 |    0.999 | 1.000 | 0.926 |  0.779 |
-| convexity            | 1.000 |    0.784 |    0.888 | 0.681 | 0.950 |  0.763 |
-| span                 | 0.984 |    0.731 |    0.672 | 0.722 | 0.839 |  0.594 |
-| radial_concentration | 1.003 |    0.735 |    0.642 | 0.694 | 0.840 |  0.636 |
-| hull_ratio           | 0.968 |    0.478 |    0.710 | 0.666 | 0.803 |  0.334 |
-| polsby_popper        | 0.978 |    0.160 |    0.465 | 0.280 | 0.593 |  0.122 |
-| width_length_ratio   | 1.000 |    1.000 |    0.407 | 1.000 | 1.000 |  0.704 |
-| reock                | 0.996 |    0.345 |    0.354 | 0.687 | 0.447 |  0.144 |
-| detour               | 0.997 |    0.641 |    0.747 | 0.828 | 0.806 |  0.496 |
-| exchange             | 0.993 |    0.591 |    0.438 | 0.550 | 0.726 |  0.571 |
-| geodesic_span        | 1.087 |    0.564 |    0.706 | 0.670 | 0.746 |     NA |
-| geodesic_chord       | 0.992 |    0.811 |    0.841 | 0.861 | 0.930 |     NA |
+| depth                | 1.001 |    0.408 |    0.665 | 0.425 | 0.675 |  0.395 |
+| moment_of_inertia    | 1.000 |    0.527 |    0.411 | 0.523 | 0.689 |  0.187 |
+| moment_isotropy      | 1.000 |    1.000 |    0.093 | 1.000 | 0.400 |  0.119 |
+| directional_balance  | 1.000 |    0.999 |    0.999 | 1.000 | 0.926 |  0.737 |
+| convexity            | 1.000 |    0.794 |    0.897 | 0.594 | 0.941 |  0.663 |
+| span                 | 1.014 |    0.806 |    0.662 | 0.711 | 0.787 |  0.478 |
+| radial_concentration | 1.023 |    0.750 |    0.661 | 0.727 | 0.838 |  0.501 |
+| hull_ratio           | 0.968 |    0.478 |    0.710 | 0.666 | 0.803 |  0.363 |
+| polsby_popper        | 0.978 |    0.160 |    0.465 | 0.280 | 0.593 |  0.111 |
+| width_length_ratio   | 1.000 |    1.000 |    0.407 | 1.000 | 1.000 |  0.747 |
+| reock                | 0.996 |    0.345 |    0.354 | 0.687 | 0.447 |  0.188 |
+| detour               | 0.997 |    0.641 |    0.747 | 0.828 | 0.806 |  0.539 |
+| exchange             | 0.993 |    0.591 |    0.438 | 0.550 | 0.726 |  0.181 |
+| geodesic_span        | 0.999 |    0.603 |    0.681 | 0.694 | 0.823 |     NA |
+| geodesic_chord       | 0.996 |    0.774 |    0.843 | 0.877 | 0.913 |     NA |
 
 A few things worth noticing in that table. **Pinwheel vs. dumbbell** is
 the clearest illustration that `moment_isotropy` and `convexity` measure
@@ -368,7 +373,7 @@ p <- terra::patches(shapes$patchy, directions = 8, zeroAsNA = TRUE)
 terra::global(p, "max", na.rm = TRUE)[[1]]  # number of disjoint pieces
 ```
 
-    [1] 6
+    [1] 11
 
 That “no special machinery” claim holds for thirteen of the fifteen
 indices - already visible in the results table above, where `patchy` got
@@ -378,7 +383,7 @@ shapes. It does NOT hold for `geodesic_span` and `geodesic_chord`:
 
 ``` r
 
-gm_geodesic_span_index(shapes$patchy, n_points = 60, seed = 1)$index
+gm_geodesic_span_index(shapes$patchy, size = 60, seed = 1)$index
 ```
 
     Warning in .warn_disconnected("gm_geodesic_span_index"):
@@ -386,8 +391,8 @@ gm_geodesic_span_index(shapes$patchy, n_points = 60, seed = 1)$index
     (different, disconnected pieces) - mean geodesic distance is not defined across
     disconnected parts, so the index is not defined for this shape. Unlike
     gm_span_index()'s own Euclidean distance (always finite regardless of what lies
-    between two points), this has no simple fix - a larger `n_points` makes an
-    unreachable pair MORE likely to be sampled, not less, for a genuinely
+    between two points), this has no simple fix - a larger `size` makes an
+    unreachable target MORE likely to be sampled, not less, for a genuinely
     multi-part shape.
 
     [1] NA
@@ -454,12 +459,12 @@ knitr::kable(format = "html", scaling, caption = "Seconds for all fifteen gridmo
 
 | patches | gridmorph | shapeindices (Monte Carlo) |
 |--------:|----------:|---------------------------:|
-|       2 |      1.55 |                       2.05 |
-|       5 |      1.55 |                       2.21 |
-|      10 |      1.54 |                       2.85 |
-|      20 |      1.56 |                       4.02 |
-|      40 |      1.60 |                       5.92 |
-|      80 |      1.58 |                       7.90 |
+|       2 |      1.60 |                       1.71 |
+|       5 |      1.55 |                       2.46 |
+|      10 |      1.57 |                       3.26 |
+|      20 |      1.56 |                       3.88 |
+|      40 |      1.52 |                       5.83 |
+|      80 |      1.56 |                       7.89 |
 
 Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices
 indices, same shapes, increasing patch count at roughly fixed total
@@ -492,9 +497,9 @@ knitr::kable(format = "html", deterministic, caption = "shapeindices' own determ
 
 | patches | n_triangles | seconds |
 |--------:|------------:|--------:|
-|       2 |         238 |    0.72 |
-|      10 |         574 |    1.98 |
-|      40 |         986 |    4.42 |
+|       2 |         264 |    0.81 |
+|      10 |         516 |    1.94 |
+|      40 |        1036 |    4.42 |
 
 shapeindices' own deterministic (exhaustive) convexity_index() mode,
 same patchy shapes. {.table .caption-top}
@@ -579,7 +584,7 @@ and when passed using
 [`gm_shape_indices()`](https://nkaza.github.io/gridmorph/reference/gm_shape_indices.md),
 it is silently ignored.
 
-## 5 Monte Carlo indices: `size`, `n_points`, `seed`
+## 5 Monte Carlo indices: `size`, `seed`
 
 [`gm_convexity_index()`](https://nkaza.github.io/gridmorph/reference/gm_convexity_index.md),
 [`gm_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_span_index.md),
@@ -608,56 +613,51 @@ Larger `size` reduces sampling noise at the cost of more computation - a
 few hundred is usually enough to see a shape’s rough compactness; a few
 thousand is closer to what you’d want for a final, reportable number.
 
-### 5.1 `gm_geodesic_span_index()`/`gm_geodesic_chord_index()`: `n_points`, not `size`
+### 5.1 `gm_geodesic_span_index()`/`gm_geodesic_chord_index()`: same `size`, very different cost
 
-The two geodesic indices are Monte Carlo too, but their own sample-size
-argument is `n_points`, not `size` - a deliberately different name, not
-an inconsistency. `size = N` draws N points and pairs them into N/2
-INDEPENDENT pairs
-([`gm_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_span_index.md)’s
-own design, one fresh pair per unit of `size`). `n_points = K` instead
-draws K points and uses EVERY pairing among them - K(K-1)/2 distances
-from just K
+The two geodesic indices are Monte Carlo too, and take the same `size`
+argument, meaning the same thing statistically: `size = K` draws K
+points and each one’s own contribution is the exact mean of its own
 [`terra::gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)
-calls, since each call already returns the distance from one point to
-every other cell for free, so re-using each draw K-1 times is far
-cheaper than drawing fresh independent pairs would be. Sharing one
-argument name between these two conventions would mean an ordinary
-`size = 3000` call - perfectly sensible for the three indices above -
-would silently also drive 3000 sequential whole-raster
-[`gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)
-calls through
-[`gm_shape_indices()`](https://nkaza.github.io/gridmorph/reference/gm_shape_indices.md)’s
-shared `...`, once the geodesic pair is reachable through the same call
-(verified directly to cause a real, several-second slowdown before the
-two argument names were split apart - see
-[`?gm_geodesic_span_index`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_span_index.md)).
-
-``` r
-
-gm_geodesic_span_index(shapes$pinwheel, n_points = 40, seed = 1)$index
-```
-
-    [1] 0.5641538
-
-``` r
-
-gm_geodesic_span_index(shapes$pinwheel, n_points = 150, seed = 1)$index
-```
-
-    [1] 0.5959656
-
-`n_points` needs to be noticeably larger than `size` would for
-comparable precision:
-[`gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)’s
-own angular quantization on a discrete grid adds noise on top of
-ordinary point-sampling noise, so both `D` and `D_ref` carry more Monte
-Carlo variability at a given sample size than the closed-form-reference
-indices above do - and each point costs a whole-raster sweep rather than
-a coordinate lookup, so `n_points` also has its own, much lower,
-memory/time-derived ceiling
+field, so precision scales with `size` the same way it does for the
+three indices above
 ([`?gm_geodesic_span_index`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_span_index.md)
-again has the details).
+has the full reasoning, including why an earlier version of this package
+used a separate `n_points` argument here and no longer does).
+
+What `size` does NOT unify is COST: each point here is a whole-raster
+[`gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)
+sweep, not a coordinate lookup, so it’s a substantially more expensive
+index than the three above at the same `size`. This matters concretely
+for
+[`gm_shape_indices()`](https://nkaza.github.io/gridmorph/reference/gm_shape_indices.md):
+a `size` picked for those three (a few hundred to a few thousand) can be
+far too slow, or exceed this index’s own much stricter memory/time
+ceiling, once it’s also reached through
+[`gm_shape_indices()`](https://nkaza.github.io/gridmorph/reference/gm_shape_indices.md)’s
+shared `...` - pick `size` with the most expensive requested index in
+mind, not just the cheapest.
+
+``` r
+
+gm_geodesic_span_index(shapes$pinwheel, size = 40, seed = 1)$index
+```
+
+    [1] 0.5864411
+
+``` r
+
+gm_geodesic_span_index(shapes$pinwheel, size = 150, seed = 1)$index
+```
+
+    [1] 0.6027439
+
+Even so, `D` and `D_ref` carry more Monte Carlo noise here than the
+closed-form-reference indices above do at a comparable `size`:
+[`gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)’s
+own angular quantization on a discrete grid adds variability on top of
+ordinary point-sampling noise, so getting a comparably precise answer
+needs a larger `size` than the three indices above would.
 
 ## 6 Morphological operators
 

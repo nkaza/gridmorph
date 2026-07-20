@@ -20,7 +20,7 @@ a detour.
 gm_geodesic_span_index(
   rast,
   weighted = TRUE,
-  n_points = 40,
+  size = 40,
   seed = NULL,
   n_bins = 100
 )
@@ -52,16 +52,17 @@ gm_geodesic_span_index(
   non-categorical (including plain binary 0/1) rasters, so
   `weighted = TRUE` is always safe there.
 
-- n_points:
+- size:
 
-  number of points to sample (ALL pairs among them are used - see above,
-  this is NOT
+  number of interior points to sample as sources - matches
   [`gm_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_span_index.md)'s
-  own `size` convention, deliberately a different argument name so the
-  two never collide through
-  [`gm_shape_indices()`](https://nkaza.github.io/gridmorph/reference/gm_shape_indices.md)'s
-  own shared `...`). Checked against a memory/time-derived ceiling
-  before running.
+  own argument name and meaning (see file header), though each source
+  costs a whole-raster
+  [`terra::gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)
+  call, a substantially higher per-point cost than
+  [`gm_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_span_index.md)'s
+  own closed-form Euclidean distance. Checked against a
+  memory/time-derived ceiling before running.
 
 - seed:
 
@@ -80,19 +81,13 @@ gm_geodesic_span_index(
 
 ## Details
 
-`n_points` means something DIFFERENT here than `size` does in
-[`gm_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_span_index.md) -
-a DELIBERATELY DIFFERENT ARGUMENT NAME, not an oversight, precisely to
-avoid this - see file header. `n_points = K` draws K points and averages
-ALL K(K-1)/2 pairwise distances among them (not K/2 independent pairs),
-so a much smaller `n_points` already gives a comparable number of
-pairs - but each point costs one whole-raster
-[`terra::gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)
-call, a substantially higher per-point cost than
-[`gm_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_span_index.md)'s
-own closed-form Euclidean distance. Checked against a
-memory/time-derived ceiling before running (`formula = "geodesic"`,
-R/utils.R); hard-stops, not a silent clamp, if exceeded.
+`size` draws K interior points as SOURCES; each source's own
+contribution is the exact weighted mean of its own `gridDist()` field
+(see file header for why this beats sampling a partner, and why `size`
+means the same thing here as it does everywhere else in this package
+now). Checked against a memory/time-derived ceiling before running
+(`formula = "geodesic"`, R/utils.R); hard-stops, not a silent clamp, if
+exceeded.
 
 BOTH `D` and `D_ref` carry real Monte Carlo noise - more than
 [`gm_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_span_index.md)'s
@@ -100,9 +95,9 @@ own estimate at a comparable sample size, since
 [`terra::gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)'s
 own angular quantization adds variability on top of ordinary
 point-sampling noise (verified: several percent spread across seeds even
-at `n_points = 200` on a test disk). Increase `n_points` for a more
-precise answer; there is no way to eliminate this noise entirely the way
-the closed-form Euclidean reference has none.
+at `size = 200` on a test disk). Increase `size` for a more precise
+answer; there is no way to eliminate this noise entirely the way the
+closed-form Euclidean reference has none.
 
 ## Examples
 
@@ -110,6 +105,6 @@ the closed-form Euclidean reference has none.
 r <- terra::rast(nrows = 40, ncols = 40, xmin = 0, xmax = 40, ymin = 0, ymax = 40, crs = "local")
 terra::values(r) <- 0
 r[10:30, 10:30] <- 1
-gm_geodesic_span_index(r, n_points = 25, seed = 1)$index
-#> [1] 0.9199875
+gm_geodesic_span_index(r, size = 25, seed = 1)$index
+#> [1] 0.9523234
 ```

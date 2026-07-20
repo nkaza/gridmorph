@@ -198,8 +198,8 @@ data.frame(package = c("shapeindices (vector)", "gridmorph (raster)"),
 ```
 
                     package elapsed_seconds
-    1 shapeindices (vector)           0.723
-    2    gridmorph (raster)           3.138
+    1 shapeindices (vector)           0.741
+    2    gridmorph (raster)          49.043
 
 Both are fast at this scale - a handful of counties is a small problem
 either way. The difference shows up on a genuinely large, complex shape:
@@ -226,7 +226,7 @@ t_full <- system.time(gm_full <- gm_shape_indices(r_nc, size = 500, seed = 1))
 t_full[["elapsed"]]  # ALL THIRTEEN indices, not just one
 ```
 
-    [1] 1.972
+    [1] 1.846
 
 All thirteen indices, in roughly a second - not because `gridmorph`’s
 own math is cheaper per-unit, but because it never had an `O(n^2)` mode
