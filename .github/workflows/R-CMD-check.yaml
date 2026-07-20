@@ -20,16 +20,7 @@ jobs:
       matrix:
         config:
           - {os: macos-latest,   r: 'release'}
-          # Quarto vignettes + R CMD check's temp build library is a known,
-          # currently-unresolved upstream bug on Windows specifically (the
-          # quarto.exe subprocess spawns its own R process that doesn't see
-          # R CMD build's temporary install library, so `library(gridmorph)`
-          # fails inside the vignette even though the same vignette builds
-          # cleanly everywhere else - see
-          # https://forum.posit.co/t/qmd-vignette-failing-on-windows-latest-r-cmd-check/208679).
-          # Skip vignette building on this one platform rather than losing
-          # Windows coverage for the R code itself.
-          - {os: windows-latest, r: 'release', build_args: 'c("--no-manual","--no-build-vignettes")'}
+          - {os: windows-latest, r: 'release'}
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
           - {os: ubuntu-latest,   r: 'release'}
           - {os: ubuntu-latest,   r: 'oldrel-1'}
@@ -56,4 +47,10 @@ jobs:
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
-          build_args: ${{ matrix.config.build_args || 'c("--no-manual","--compact-vignettes=gs+qpdf")' }}
+          # Vignettes are Quarto (.qmd) and only ever need to render for the
+          # pkgdown/GitHub Pages build (pkgdown.yaml, which already builds
+          # them via its own separate quarto-based path) - R CMD check
+          # doesn't need to rebuild them too, so skip that step here rather
+          # than fight quarto.exe's known Windows-specific issue seeing R CMD
+          # build's temporary install library.
+          build_args: 'c("--no-manual","--no-build-vignettes")'
