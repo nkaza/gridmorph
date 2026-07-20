@@ -299,19 +299,19 @@ knitr::kable(round(all_results, 3))
 
 |                      |  disk | pinwheel | dumbbell |  ring |     L | patchy |
 |:---------------------|------:|---------:|---------:|------:|------:|-------:|
-| depth                | 1.001 |    0.408 |    0.665 | 0.425 | 0.675 |  0.414 |
-| moment_of_inertia    | 1.000 |    0.527 |    0.411 | 0.523 | 0.689 |  0.126 |
-| moment_isotropy      | 1.000 |    1.000 |    0.093 | 1.000 | 0.400 |  0.319 |
-| directional_balance  | 1.000 |    0.999 |    0.999 | 1.000 | 0.926 |  0.880 |
-| convexity            | 1.000 |    0.784 |    0.888 | 0.681 | 0.950 |  0.491 |
-| span                 | 0.984 |    0.731 |    0.672 | 0.722 | 0.839 |  0.367 |
-| radial_concentration | 1.003 |    0.735 |    0.642 | 0.694 | 0.840 |  0.352 |
-| hull_ratio           | 0.968 |    0.478 |    0.710 | 0.666 | 0.803 |  0.237 |
-| polsby_popper        | 0.978 |    0.160 |    0.465 | 0.280 | 0.593 |  0.123 |
-| width_length_ratio   | 1.000 |    1.000 |    0.407 | 1.000 | 1.000 |  0.975 |
-| reock                | 0.996 |    0.345 |    0.354 | 0.687 | 0.447 |  0.122 |
-| detour               | 0.997 |    0.641 |    0.747 | 0.828 | 0.806 |  0.433 |
-| exchange             | 0.993 |    0.591 |    0.438 | 0.550 | 0.726 |  0.034 |
+| depth                | 1.001 |    0.408 |    0.665 | 0.425 | 0.675 |  0.439 |
+| moment_of_inertia    | 1.000 |    0.527 |    0.411 | 0.523 | 0.689 |  0.169 |
+| moment_isotropy      | 1.000 |    1.000 |    0.093 | 1.000 | 0.400 |  0.365 |
+| directional_balance  | 1.000 |    0.999 |    0.999 | 1.000 | 0.926 |  0.969 |
+| convexity            | 1.000 |    0.784 |    0.888 | 0.681 | 0.950 |  0.518 |
+| span                 | 0.984 |    0.731 |    0.672 | 0.722 | 0.839 |  0.425 |
+| radial_concentration | 1.003 |    0.735 |    0.642 | 0.694 | 0.840 |  0.394 |
+| hull_ratio           | 0.968 |    0.478 |    0.710 | 0.666 | 0.803 |  0.295 |
+| polsby_popper        | 0.978 |    0.160 |    0.465 | 0.280 | 0.593 |  0.130 |
+| width_length_ratio   | 1.000 |    1.000 |    0.407 | 1.000 | 1.000 |  0.972 |
+| reock                | 0.996 |    0.345 |    0.354 | 0.687 | 0.447 |  0.204 |
+| detour               | 0.997 |    0.641 |    0.747 | 0.828 | 0.806 |  0.510 |
+| exchange             | 0.993 |    0.591 |    0.438 | 0.550 | 0.726 |  0.001 |
 | geodesic_span        | 1.087 |    0.564 |    0.706 | 0.670 | 0.746 |     NA |
 | geodesic_chord       | 0.992 |    0.811 |    0.841 | 0.861 | 0.930 |     NA |
 
@@ -454,12 +454,12 @@ knitr::kable(scaling, caption = "Seconds for all fifteen gridmorph indices vs. a
 
 | patches | gridmorph | shapeindices (Monte Carlo) |
 |--------:|----------:|---------------------------:|
-|       2 |      1.52 |                       2.10 |
-|       5 |      1.58 |                       2.27 |
-|      10 |      1.53 |                       2.89 |
-|      20 |      1.54 |                       4.04 |
-|      40 |      1.56 |                       5.98 |
-|      80 |      1.57 |                       7.84 |
+|       2 |      1.34 |                       1.97 |
+|       5 |      1.35 |                       2.22 |
+|      10 |      1.35 |                       2.87 |
+|      20 |      1.34 |                       4.10 |
+|      40 |      1.40 |                       5.98 |
+|      80 |      1.38 |                       7.79 |
 
 Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices
 indices, same shapes, increasing patch count at roughly fixed total
@@ -492,9 +492,9 @@ knitr::kable(deterministic, caption = "shapeindices' own deterministic (exhausti
 
 | patches | n_triangles | seconds |
 |--------:|------------:|--------:|
-|       2 |         238 |    0.71 |
-|      10 |         574 |    2.01 |
-|      40 |         986 |    4.44 |
+|       2 |         238 |    0.69 |
+|      10 |         574 |    2.08 |
+|      40 |         986 |    4.71 |
 
 shapeindices’ own deterministic (exhaustive) convexity_index() mode,
 same patchy shapes. {.table .caption-top}
