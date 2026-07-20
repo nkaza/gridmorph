@@ -41,3 +41,5 @@ VignetteBuilder: quarto
 URL: https://github.com/nkaza/gridmorph
 BugReports: https://github.com/nkaza/gridmorph/issues
 Config/roxygen2/version: 8.0.0
+Remotes:
+    nkaza/shapeindices
