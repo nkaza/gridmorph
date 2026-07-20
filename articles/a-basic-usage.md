@@ -294,24 +294,24 @@ returns a named vector:
 ``` r
 
 all_results <- sapply(shapes, gm_shape_indices, size = 2000, seed = 1)
-knitr::kable(round(all_results, 3))
+knitr::kable(format = "html", round(all_results, 3))
 ```
 
 |                      |  disk | pinwheel | dumbbell |  ring |     L | patchy |
 |:---------------------|------:|---------:|---------:|------:|------:|-------:|
-| depth                | 1.001 |    0.408 |    0.665 | 0.425 | 0.675 |  0.407 |
-| moment_of_inertia    | 1.000 |    0.527 |    0.411 | 0.523 | 0.689 |  0.162 |
-| moment_isotropy      | 1.000 |    1.000 |    0.093 | 1.000 | 0.400 |  0.370 |
-| directional_balance  | 1.000 |    0.999 |    0.999 | 1.000 | 0.926 |  0.856 |
-| convexity            | 1.000 |    0.784 |    0.888 | 0.681 | 0.950 |  0.487 |
-| span                 | 0.984 |    0.731 |    0.672 | 0.722 | 0.839 |  0.423 |
-| radial_concentration | 1.003 |    0.735 |    0.642 | 0.694 | 0.840 |  0.401 |
-| hull_ratio           | 0.968 |    0.478 |    0.710 | 0.666 | 0.803 |  0.262 |
-| polsby_popper        | 0.978 |    0.160 |    0.465 | 0.280 | 0.593 |  0.112 |
-| width_length_ratio   | 1.000 |    1.000 |    0.407 | 1.000 | 1.000 |  0.728 |
-| reock                | 0.996 |    0.345 |    0.354 | 0.687 | 0.447 |  0.192 |
-| detour               | 0.997 |    0.641 |    0.747 | 0.828 | 0.806 |  0.488 |
-| exchange             | 0.993 |    0.591 |    0.438 | 0.550 | 0.726 |  0.066 |
+| depth                | 1.001 |    0.408 |    0.665 | 0.425 | 0.675 |  0.422 |
+| moment_of_inertia    | 1.000 |    0.527 |    0.411 | 0.523 | 0.689 |  0.262 |
+| moment_isotropy      | 1.000 |    1.000 |    0.093 | 1.000 | 0.400 |  0.281 |
+| directional_balance  | 1.000 |    0.999 |    0.999 | 1.000 | 0.926 |  0.779 |
+| convexity            | 1.000 |    0.784 |    0.888 | 0.681 | 0.950 |  0.763 |
+| span                 | 0.984 |    0.731 |    0.672 | 0.722 | 0.839 |  0.594 |
+| radial_concentration | 1.003 |    0.735 |    0.642 | 0.694 | 0.840 |  0.636 |
+| hull_ratio           | 0.968 |    0.478 |    0.710 | 0.666 | 0.803 |  0.334 |
+| polsby_popper        | 0.978 |    0.160 |    0.465 | 0.280 | 0.593 |  0.122 |
+| width_length_ratio   | 1.000 |    1.000 |    0.407 | 1.000 | 1.000 |  0.704 |
+| reock                | 0.996 |    0.345 |    0.354 | 0.687 | 0.447 |  0.144 |
+| detour               | 0.997 |    0.641 |    0.747 | 0.828 | 0.806 |  0.496 |
+| exchange             | 0.993 |    0.591 |    0.438 | 0.550 | 0.726 |  0.571 |
 | geodesic_span        | 1.087 |    0.564 |    0.706 | 0.670 | 0.746 |     NA |
 | geodesic_chord       | 0.992 |    0.811 |    0.841 | 0.861 | 0.930 |     NA |
 
@@ -368,7 +368,7 @@ p <- terra::patches(shapes$patchy, directions = 8, zeroAsNA = TRUE)
 terra::global(p, "max", na.rm = TRUE)[[1]]  # number of disjoint pieces
 ```
 
-    [1] 5
+    [1] 6
 
 That “no special machinery” claim holds for thirteen of the fifteen
 indices - already visible in the results table above, where `patchy` got
@@ -449,19 +449,19 @@ scaling <- do.call(rbind, lapply(c(2, 5, 10, 20, 40, 80), function(np) {
              `shapeindices (Monte Carlo)` = round(t_vec[["elapsed"]], 2),
              check.names = FALSE)
 }))
-knitr::kable(scaling, caption = "Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices indices, same shapes, increasing patch count at roughly fixed total area.")
+knitr::kable(format = "html", scaling, caption = "Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices indices, same shapes, increasing patch count at roughly fixed total area.")
 ```
 
 | patches | gridmorph | shapeindices (Monte Carlo) |
 |--------:|----------:|---------------------------:|
-|       2 |      1.37 |                       1.99 |
-|       5 |      1.36 |                       2.14 |
-|      10 |      1.35 |                       2.73 |
-|      20 |      1.36 |                       3.90 |
-|      40 |      1.39 |                       5.95 |
-|      80 |      1.40 |                       7.86 |
+|       2 |      1.55 |                       2.05 |
+|       5 |      1.55 |                       2.21 |
+|      10 |      1.54 |                       2.85 |
+|      20 |      1.56 |                       4.02 |
+|      40 |      1.60 |                       5.92 |
+|      80 |      1.58 |                       7.90 |
 
-Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices
+Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices
 indices, same shapes, increasing patch count at roughly fixed total
 area. {.table .caption-top}
 
@@ -487,16 +487,16 @@ deterministic <- do.call(rbind, lapply(c(2, 10, 40), function(np) {
   t <- system.time(shape_indices(poly, which = "convexity", deterministic = TRUE))
   data.frame(patches = np, n_triangles = n_tri, seconds = round(t[["elapsed"]], 2))
 }))
-knitr::kable(deterministic, caption = "shapeindices' own deterministic (exhaustive) convexity_index() mode, same patchy shapes.")
+knitr::kable(format = "html", deterministic, caption = "shapeindices' own deterministic (exhaustive) convexity_index() mode, same patchy shapes.")
 ```
 
 | patches | n_triangles | seconds |
 |--------:|------------:|--------:|
-|       2 |         238 |    0.69 |
-|      10 |         574 |    1.94 |
-|      40 |         986 |    4.60 |
+|       2 |         238 |    0.72 |
+|      10 |         574 |    1.98 |
+|      40 |         986 |    4.42 |
 
-shapeindices’ own deterministic (exhaustive) convexity_index() mode,
+shapeindices' own deterministic (exhaustive) convexity_index() mode,
 same patchy shapes. {.table .caption-top}
 
 That growth looks mild here because these patches are simple, well-

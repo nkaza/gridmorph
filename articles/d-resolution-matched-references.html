@@ -100,12 +100,12 @@
 <span>  reock          <span class="op">=</span> <span class="va">reock</span><span class="op">$</span><span class="va">area</span> <span class="op">/</span> <span class="va">reock</span><span class="op">$</span><span class="va">mbc_area</span>,</span>
 <span>  detour         <span class="op">=</span> <span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">pi</span> <span class="op">*</span> <span class="va">detour</span><span class="op">$</span><span class="va">area</span><span class="op">)</span> <span class="op">/</span> <span class="va">detour</span><span class="op">$</span><span class="va">hull_perimeter</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">raw_scores</span>, <span class="fl">3</span><span class="op">)</span>, col.names <span class="op">=</span> <span class="st">"raw score (a perfect disk should give 1)"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span>format <span class="op">=</span> <span class="st">"html"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">raw_scores</span>, <span class="fl">3</span><span class="op">)</span>, col.names <span class="op">=</span> <span class="st">"raw score (a perfect disk should give 1)"</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <table class="table caption-top">
 <thead><tr class="header">
-<th style="text-align: left;"></th>
-<th style="text-align: right;">raw score (a perfect disk should give 1)</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">raw score (a perfect disk should give 1)</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -133,12 +133,12 @@
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fixed_scores</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>depth <span class="op">=</span> <span class="va">depth</span><span class="op">$</span><span class="va">index</span>, polsby_popper <span class="op">=</span> <span class="va">pp</span><span class="op">$</span><span class="va">index</span>,</span>
 <span>                   reock <span class="op">=</span> <span class="va">reock</span><span class="op">$</span><span class="va">index</span>, detour <span class="op">=</span> <span class="va">detour</span><span class="op">$</span><span class="va">index</span><span class="op">)</span></span>
-<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">fixed_scores</span>, <span class="fl">3</span><span class="op">)</span>, col.names <span class="op">=</span> <span class="st">"gridmorph's actual index"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span>format <span class="op">=</span> <span class="st">"html"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">fixed_scores</span>, <span class="fl">3</span><span class="op">)</span>, col.names <span class="op">=</span> <span class="st">"gridmorph's actual index"</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <table class="table caption-top">
 <thead><tr class="header">
-<th style="text-align: left;"></th>
-<th style="text-align: right;">gridmorph’s actual index</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">gridmorph's actual index</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -167,7 +167,7 @@
 <p>The four functions fall into two different mechanisms, both boiling down to the same root cause: <strong>a raster is a set of finite cells, not a continuous shape</strong>, so anything measured from it - a distance, a perimeter, an area by pixel count - is only ever an approximation of the matching continuous quantity, and that approximation doesn’t hit the continuous formula’s own constant exactly. Zooming in on a small rasterized disk against the true circle it approximates makes this concrete - the shape these four indices actually measure is the blue stair-step region, not the smooth red curve:</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div id="fig-raster-vs-circle" class="quarto-float quarto-figure quarto-figure-center" data-fig-align="center" width="528">
+<div id="fig-raster-vs-circle" class="quarto-float quarto-figure quarto-figure-center" width="528" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-raster-vs-circle-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="d-resolution-matched-references_files/figure-html/fig-raster-vs-circle-1.png" id="fig-raster-vs-circle" class="quarto-figure quarto-figure-center" width="528">
 </div>
@@ -180,7 +180,7 @@ Figure 1
 <p><strong><code><a href="../reference/gm_depth_index.html">gm_depth_index()</a></code></strong>: <code>mean_depth</code> comes from <code><a href="https://rspatial.github.io/terra/reference/distance.html" class="external-link">terra::distance()</a></code>, which measures from a cell’s own <em>centre</em> to the nearest invalid cell’s <em>centre</em> - not to the true boundary curve. That’s a systematically larger quantity than true distance-to-boundary, most so right at the boundary and decaying (but never fully vanishing at any finite resolution) toward the interior. Zooming in on one boundary cell shows the gap directly - the true distance to the circle (green) is shorter than the distance <code><a href="https://rspatial.github.io/terra/reference/distance.html" class="external-link">terra::distance()</a></code> actually measures, to the centre of the nearest invalid cell (orange, dashed):</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div id="fig-depth-mechanism" class="quarto-float quarto-figure quarto-figure-center" data-fig-align="center" width="720">
+<div id="fig-depth-mechanism" class="quarto-float quarto-figure quarto-figure-center" width="720" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-depth-mechanism-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="d-resolution-matched-references_files/figure-html/fig-depth-mechanism-1.png" id="fig-depth-mechanism" class="quarto-figure quarto-figure-center" width="720">
 </div>
@@ -193,7 +193,7 @@ Figure 2
 <p><strong><code><a href="../reference/gm_polsby_popper_index.html">gm_polsby_popper_index()</a></code></strong>: perimeter comes from marching squares (<code><a href="https://rspatial.github.io/terra/reference/contour.html" class="external-link">terra::as.contour()</a></code>), a technique built to reconstruct a smooth boundary from a <em>smoothly-sampled</em> field. A binary raster mask was never smoothly sampled in the first place - there’s no genuine sub-cell signal for it to interpolate - so the reconstructed perimeter carries a real, persistent overestimate that does not shrink away at finer resolutions, on top of substantial noise depending on exactly how the shape’s boundary happens to sit against the grid. The left panel shows the reconstructed contour (dark blue) cutting corners against the true circle in some places and bulging past it in others; the right panel shows twelve disks of the <em>same</em> radius, each centred a random fraction of a cell differently, and how much that alone moves the (already resolution-matched) index:</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div id="fig-pp-mechanism" class="quarto-float quarto-figure quarto-figure-center" data-fig-align="center" width="960">
+<div id="fig-pp-mechanism" class="quarto-float quarto-figure quarto-figure-center" width="960" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-pp-mechanism-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="d-resolution-matched-references_files/figure-html/fig-pp-mechanism-1.png" id="fig-pp-mechanism" class="quarto-figure quarto-figure-center" width="960">
 </div>
@@ -206,7 +206,7 @@ Figure 3
 <p><strong><code><a href="../reference/gm_reock_index.html">gm_reock_index()</a></code> / <code><a href="../reference/gm_detour_index.html">gm_detour_index()</a></code></strong>: both compare a pixel-COUNT area (or a raster-derived convex hull) against an EXACTLY-computed reference (the minimum bounding circle’s area, or a perfect circle’s analytical perimeter). Pixel counting alone always slightly undershoots a shape’s true continuous area near its own boundary, while the exact reference carries no matching imprecision - so the two sides of the ratio are measured by two different conventions that don’t cancel by themselves. Under centre-based rasterization, a boundary cell’s own far corner can sit outside the true circle - the hull built from those corners (dark blue) visibly bulges past it:</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div id="fig-hull-mechanism" class="quarto-float quarto-figure quarto-figure-center" data-fig-align="center" width="672">
+<div id="fig-hull-mechanism" class="quarto-float quarto-figure quarto-figure-center" width="672" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-hull-mechanism-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="d-resolution-matched-references_files/figure-html/fig-hull-mechanism-1.png" id="fig-hull-mechanism" class="quarto-figure quarto-figure-center" width="672">
 </div>
@@ -232,7 +232,7 @@ Figure 4
 <p>One index needs a further refinement. <code><a href="../reference/gm_polsby_popper_index.html">gm_polsby_popper_index()</a></code>’s marching-squares perimeter is sensitive enough to exactly where a shape’s boundary falls against the pixel grid that a <em>single</em> reference disk isn’t a reliable stand-in - two disks of the <em>same radius</em>, centred a fraction of a cell apart, can give visibly different raw scores. The left panel below overlays two such disks directly: one centred on a cell centre (solid dark outline), one shifted <code>0.45</code> cells diagonally (dashed orange outline) - the blue-shaded cells are only in the first disk, the orange-shaded cells only in the second. That’s the entire source of the difference between their raw scores. The right panel shows where those two scores (triangles) sit among the full 25-point grid of sub-cell offsets <code><a href="../reference/gm_polsby_popper_index.html">gm_polsby_popper_index()</a></code> actually averages over: scattered on both sides of the mean (the dark blue line) - no single one of those 25 points would make a reliable reference on its own, but their mean is stable enough to use:</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div id="fig-phase-averaging" class="quarto-float quarto-figure quarto-figure-center" data-fig-align="center" width="1056">
+<div id="fig-phase-averaging" class="quarto-float quarto-figure quarto-figure-center" width="1056" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-phase-averaging-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="d-resolution-matched-references_files/figure-html/fig-phase-averaging-1.png" id="fig-phase-averaging" class="quarto-figure quarto-figure-center" width="1056">
 </div>
@@ -247,7 +247,7 @@ Figure 5
 <p>Running all four functions on disks of increasing radius shows what the fix buys, and where it doesn’t: <code><a href="../reference/gm_depth_index.html">gm_depth_index()</a></code>/<code><a href="../reference/gm_reock_index.html">gm_reock_index()</a></code>/ <code><a href="../reference/gm_detour_index.html">gm_detour_index()</a></code>’s raw scores (orange) converge toward 1 only slowly, needing a genuinely large radius to get close - the resolution-matched <code>index</code> (blue) is already tight at every radius shown, including the smallest. <code><a href="../reference/gm_polsby_popper_index.html">gm_polsby_popper_index()</a></code>’s raw score doesn’t converge toward 1 at all, even at radius 90 - the non-vanishing bias described above - while its own resolution-matched <code>index</code> stays close to 1 throughout, with the visible wobble being exactly the residual phase noise from the figure above:</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div id="fig-convergence" class="quarto-float quarto-figure quarto-figure-center" data-fig-align="center" width="960">
+<div id="fig-convergence" class="quarto-float quarto-figure quarto-figure-center" width="960" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig"><div aria-describedby="fig-convergence-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="d-resolution-matched-references_files/figure-html/fig-convergence-1.png" id="fig-convergence" class="quarto-figure quarto-figure-center" width="960">
 </div>

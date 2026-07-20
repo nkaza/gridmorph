@@ -272,17 +272,17 @@
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">all_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">shapes</span>, <span class="va">gm_shape_indices</span>, size <span class="op">=</span> <span class="fl">2000</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">all_results</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span>format <span class="op">=</span> <span class="st">"html"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">all_results</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <table class="table caption-top">
 <thead><tr class="header">
-<th style="text-align: left;"></th>
-<th style="text-align: right;">disk</th>
-<th style="text-align: right;">pinwheel</th>
-<th style="text-align: right;">dumbbell</th>
-<th style="text-align: right;">ring</th>
-<th style="text-align: right;">L</th>
-<th style="text-align: right;">patchy</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">disk</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">pinwheel</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">dumbbell</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">ring</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">L</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">patchy</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -292,7 +292,7 @@
 <td style="text-align: right;">0.665</td>
 <td style="text-align: right;">0.425</td>
 <td style="text-align: right;">0.675</td>
-<td style="text-align: right;">0.407</td>
+<td style="text-align: right;">0.422</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">moment_of_inertia</td>
@@ -301,7 +301,7 @@
 <td style="text-align: right;">0.411</td>
 <td style="text-align: right;">0.523</td>
 <td style="text-align: right;">0.689</td>
-<td style="text-align: right;">0.162</td>
+<td style="text-align: right;">0.262</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">moment_isotropy</td>
@@ -310,7 +310,7 @@
 <td style="text-align: right;">0.093</td>
 <td style="text-align: right;">1.000</td>
 <td style="text-align: right;">0.400</td>
-<td style="text-align: right;">0.370</td>
+<td style="text-align: right;">0.281</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">directional_balance</td>
@@ -319,7 +319,7 @@
 <td style="text-align: right;">0.999</td>
 <td style="text-align: right;">1.000</td>
 <td style="text-align: right;">0.926</td>
-<td style="text-align: right;">0.856</td>
+<td style="text-align: right;">0.779</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">convexity</td>
@@ -328,7 +328,7 @@
 <td style="text-align: right;">0.888</td>
 <td style="text-align: right;">0.681</td>
 <td style="text-align: right;">0.950</td>
-<td style="text-align: right;">0.487</td>
+<td style="text-align: right;">0.763</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">span</td>
@@ -337,7 +337,7 @@
 <td style="text-align: right;">0.672</td>
 <td style="text-align: right;">0.722</td>
 <td style="text-align: right;">0.839</td>
-<td style="text-align: right;">0.423</td>
+<td style="text-align: right;">0.594</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">radial_concentration</td>
@@ -346,7 +346,7 @@
 <td style="text-align: right;">0.642</td>
 <td style="text-align: right;">0.694</td>
 <td style="text-align: right;">0.840</td>
-<td style="text-align: right;">0.401</td>
+<td style="text-align: right;">0.636</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">hull_ratio</td>
@@ -355,7 +355,7 @@
 <td style="text-align: right;">0.710</td>
 <td style="text-align: right;">0.666</td>
 <td style="text-align: right;">0.803</td>
-<td style="text-align: right;">0.262</td>
+<td style="text-align: right;">0.334</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">polsby_popper</td>
@@ -364,7 +364,7 @@
 <td style="text-align: right;">0.465</td>
 <td style="text-align: right;">0.280</td>
 <td style="text-align: right;">0.593</td>
-<td style="text-align: right;">0.112</td>
+<td style="text-align: right;">0.122</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">width_length_ratio</td>
@@ -373,7 +373,7 @@
 <td style="text-align: right;">0.407</td>
 <td style="text-align: right;">1.000</td>
 <td style="text-align: right;">1.000</td>
-<td style="text-align: right;">0.728</td>
+<td style="text-align: right;">0.704</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">reock</td>
@@ -382,7 +382,7 @@
 <td style="text-align: right;">0.354</td>
 <td style="text-align: right;">0.687</td>
 <td style="text-align: right;">0.447</td>
-<td style="text-align: right;">0.192</td>
+<td style="text-align: right;">0.144</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">detour</td>
@@ -391,7 +391,7 @@
 <td style="text-align: right;">0.747</td>
 <td style="text-align: right;">0.828</td>
 <td style="text-align: right;">0.806</td>
-<td style="text-align: right;">0.488</td>
+<td style="text-align: right;">0.496</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">exchange</td>
@@ -400,7 +400,7 @@
 <td style="text-align: right;">0.438</td>
 <td style="text-align: right;">0.550</td>
 <td style="text-align: right;">0.726</td>
-<td style="text-align: right;">0.066</td>
+<td style="text-align: right;">0.571</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">geodesic_span</td>
@@ -443,7 +443,7 @@
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/patches.html" class="external-link">patches</a></span><span class="op">(</span><span class="va">shapes</span><span class="op">$</span><span class="va">patchy</span>, directions <span class="op">=</span> <span class="fl">8</span>, zeroAsNA <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/global.html" class="external-link">global</a></span><span class="op">(</span><span class="va">p</span>, <span class="st">"max"</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>  <span class="co"># number of disjoint pieces</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 5</code></pre>
+<pre><code>[1] 6</code></pre>
 </div>
 </div>
 <p>That “no special machinery” claim holds for thirteen of the fifteen indices - already visible in the results table above, where <code>patchy</code> got an ordinary numeric score on every area/moment/hull/boundary-based index, computed exactly the same way as for the five single-piece shapes. It does NOT hold for <code>geodesic_span</code> and <code>geodesic_chord</code>:</p>
@@ -493,45 +493,45 @@ multi-part shape.</code></pre>
 <span>             `shapeindices (Monte Carlo)` <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">t_vec</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span>, <span class="fl">2</span><span class="op">)</span>,</span>
 <span>             check.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">scaling</span>, caption <span class="op">=</span> <span class="st">"Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices indices, same shapes, increasing patch count at roughly fixed total area."</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span>format <span class="op">=</span> <span class="st">"html"</span>, <span class="va">scaling</span>, caption <span class="op">=</span> <span class="st">"Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices indices, same shapes, increasing patch count at roughly fixed total area."</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <table class="table caption-top">
-<caption>Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices indices, same shapes, increasing patch count at roughly fixed total area.</caption>
+<caption>Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices indices, same shapes, increasing patch count at roughly fixed total area.</caption>
 <thead><tr class="header">
-<th style="text-align: right;">patches</th>
-<th style="text-align: right;">gridmorph</th>
-<th style="text-align: right;">shapeindices (Monte Carlo)</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">patches</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">gridmorph</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">shapeindices (Monte Carlo)</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td style="text-align: right;">2</td>
-<td style="text-align: right;">1.37</td>
-<td style="text-align: right;">1.99</td>
+<td style="text-align: right;">1.55</td>
+<td style="text-align: right;">2.05</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">5</td>
-<td style="text-align: right;">1.36</td>
-<td style="text-align: right;">2.14</td>
+<td style="text-align: right;">1.55</td>
+<td style="text-align: right;">2.21</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">10</td>
-<td style="text-align: right;">1.35</td>
-<td style="text-align: right;">2.73</td>
+<td style="text-align: right;">1.54</td>
+<td style="text-align: right;">2.85</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">20</td>
-<td style="text-align: right;">1.36</td>
-<td style="text-align: right;">3.90</td>
+<td style="text-align: right;">1.56</td>
+<td style="text-align: right;">4.02</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">40</td>
-<td style="text-align: right;">1.39</td>
-<td style="text-align: right;">5.95</td>
+<td style="text-align: right;">1.60</td>
+<td style="text-align: right;">5.92</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">80</td>
-<td style="text-align: right;">1.40</td>
-<td style="text-align: right;">7.86</td>
+<td style="text-align: right;">1.58</td>
+<td style="text-align: right;">7.90</td>
 </tr>
 </tbody>
 </table>
@@ -547,30 +547,30 @@ multi-part shape.</code></pre>
 <span>  <span class="va">t</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="fu"><a href="https://nkaza.github.io/shapeindices/reference/shape_indices.html" class="external-link">shape_indices</a></span><span class="op">(</span><span class="va">poly</span>, which <span class="op">=</span> <span class="st">"convexity"</span>, deterministic <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>patches <span class="op">=</span> <span class="va">np</span>, n_triangles <span class="op">=</span> <span class="va">n_tri</span>, seconds <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">t</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">deterministic</span>, caption <span class="op">=</span> <span class="st">"shapeindices' own deterministic (exhaustive) convexity_index() mode, same patchy shapes."</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span>format <span class="op">=</span> <span class="st">"html"</span>, <span class="va">deterministic</span>, caption <span class="op">=</span> <span class="st">"shapeindices' own deterministic (exhaustive) convexity_index() mode, same patchy shapes."</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <table class="table caption-top">
-<caption>shapeindices’ own deterministic (exhaustive) convexity_index() mode, same patchy shapes.</caption>
+<caption>shapeindices' own deterministic (exhaustive) convexity_index() mode, same patchy shapes.</caption>
 <thead><tr class="header">
-<th style="text-align: right;">patches</th>
-<th style="text-align: right;">n_triangles</th>
-<th style="text-align: right;">seconds</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">patches</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">n_triangles</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">seconds</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td style="text-align: right;">2</td>
 <td style="text-align: right;">238</td>
-<td style="text-align: right;">0.69</td>
+<td style="text-align: right;">0.72</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">10</td>
 <td style="text-align: right;">574</td>
-<td style="text-align: right;">1.94</td>
+<td style="text-align: right;">1.98</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">40</td>
 <td style="text-align: right;">986</td>
-<td style="text-align: right;">4.60</td>
+<td style="text-align: right;">4.42</td>
 </tr>
 </tbody>
 </table>

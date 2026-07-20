@@ -78,7 +78,7 @@ convergence <- do.call(rbind, lapply(c(25, 50, 100, 200), function(n) {
                            size = 3000, seed = 1)
   data.frame(n_cells_per_side = n, n_valid_cells = n_valid, t(res))
 }))
-knitr::kable(convergence, digits = 4, row.names = FALSE)
+knitr::kable(format = "html", convergence, digits = 4, row.names = FALSE)
 ```
 
 | n_cells_per_side | n_valid_cells | depth | moment_of_inertia | hull_ratio | polsby_popper |
@@ -135,7 +135,7 @@ gm_w <- gm_shape_indices(r_bir74, which = c("moment_of_inertia", "convexity", "h
                           weighted = TRUE, size = 1500, seed = 1)
 
 comparison <- rbind(vector = unlist(vec_w), raster = gm_w[c("moment_of_inertia", "convexity", "hull_ratio")])
-knitr::kable(comparison, digits = 4)
+knitr::kable(format = "html", comparison, digits = 4)
 ```
 
 |        | moment_of_inertia_index | convexity_index | hull_ratio_index |
@@ -198,8 +198,8 @@ data.frame(package = c("shapeindices (vector)", "gridmorph (raster)"),
 ```
 
                     package elapsed_seconds
-    1 shapeindices (vector)           0.669
-    2    gridmorph (raster)           2.852
+    1 shapeindices (vector)           0.723
+    2    gridmorph (raster)           3.138
 
 Both are fast at this scale - a handful of counties is a small problem
 either way. The difference shows up on a genuinely large, complex shape:
@@ -226,7 +226,7 @@ t_full <- system.time(gm_full <- gm_shape_indices(r_nc, size = 500, seed = 1))
 t_full[["elapsed"]]  # ALL THIRTEEN indices, not just one
 ```
 
-    [1] 1.86
+    [1] 1.972
 
 All thirteen indices, in roughly a second - not because `gridmorph`’s
 own math is cheaper per-unit, but because it never had an `O(n^2)` mode

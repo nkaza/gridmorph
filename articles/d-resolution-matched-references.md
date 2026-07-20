@@ -50,7 +50,7 @@ raw_scores <- c(
   reock          = reock$area / reock$mbc_area,
   detour         = 2 * sqrt(pi * detour$area) / detour$hull_perimeter
 )
-knitr::kable(round(raw_scores, 3), col.names = "raw score (a perfect disk should give 1)")
+knitr::kable(format = "html", round(raw_scores, 3), col.names = "raw score (a perfect disk should give 1)")
 ```
 
 |               | raw score (a perfect disk should give 1) |
@@ -67,10 +67,10 @@ the fix in effect - every one lands close to 1:
 
 fixed_scores <- c(depth = depth$index, polsby_popper = pp$index,
                    reock = reock$index, detour = detour$index)
-knitr::kable(round(fixed_scores, 3), col.names = "gridmorph's actual index")
+knitr::kable(format = "html", round(fixed_scores, 3), col.names = "gridmorph's actual index")
 ```
 
-|               | gridmorph’s actual index |
+|               | gridmorph's actual index |
 |:--------------|-------------------------:|
 | depth         |                    1.001 |
 | polsby_popper |                    0.978 |
