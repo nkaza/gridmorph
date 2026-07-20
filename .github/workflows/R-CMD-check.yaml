@@ -52,5 +52,10 @@ jobs:
           # them via its own separate quarto-based path) - R CMD check
           # doesn't need to rebuild them too, so skip that step here rather
           # than fight quarto.exe's known Windows-specific issue seeing R CMD
-          # build's temporary install library.
+          # build's temporary install library. --no-build-vignettes alone
+          # isn't enough - R CMD check separately warns (and, with the
+          # default error-on: "warning", fails) when vignettes/ has files
+          # but inst/doc doesn't; --ignore-vignettes on the check step itself
+          # skips that check too.
+          args: 'c("--no-manual", "--as-cran", "--ignore-vignettes")'
           build_args: 'c("--no-manual","--no-build-vignettes")'
