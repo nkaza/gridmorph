@@ -1,0 +1,12 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  a-basic-usage: a-basic-usage.html
+  b-morphological-operators: b-morphological-operators.html
+  c-comparison-with-shapeindices: c-comparison-with-shapeindices.html
+  d-resolution-matched-references: d-resolution-matched-references.html
+last_built: 2026-07-20T15:55Z
+urls:
+  reference: https://nkaza.github.io/gridmorph/reference
+  article: https://nkaza.github.io/gridmorph/articles
