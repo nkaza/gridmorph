@@ -303,8 +303,8 @@
 <span>           elapsed_seconds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">t_vector</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span>, <span class="va">t_raster</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                package elapsed_seconds
-1 shapeindices (vector)           0.614
-2    gridmorph (raster)           2.867</code></pre>
+1 shapeindices (vector)           0.669
+2    gridmorph (raster)           2.852</code></pre>
 </div>
 </div>
 <p>Both are fast at this scale - a handful of counties is a small problem either way. The difference shows up on a genuinely large, complex shape: all 100 NC counties combined into one, with real holes and real multi-part dispersal (barrier islands). <code>shapeindices</code>’ own deterministic mode warns explicitly once a mesh gets large - triangulating the full NC union already produces 281 triangles, and just <code><a href="https://nkaza.github.io/shapeindices/reference/convexity_index.html" class="external-link">convexity_index()</a></code> alone (one of thirteen indices, deterministic mode) takes on the order of <strong>19 seconds</strong>. <code>gridmorph</code>, on a raster covering the same shape at a comparable level of detail (roughly 49,000 valid cells):</p>
@@ -319,7 +319,7 @@
 <code class="sourceCode R"><span><span class="va">t_full</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="va">gm_full</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gm_shape_indices.html">gm_shape_indices</a></span><span class="op">(</span><span class="va">r_nc</span>, size <span class="op">=</span> <span class="fl">500</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">t_full</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span>  <span class="co"># ALL THIRTEEN indices, not just one</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 1.874</code></pre>
+<pre><code>[1] 1.86</code></pre>
 </div>
 </div>
 <p>All thirteen indices, in roughly a second - not because <code>gridmorph</code>’s own math is cheaper per-unit, but because it never had an <code>O(n^2)</code> mode to fall into in the first place: every index here is <code>O(N)</code> or Monte Carlo <code>O(size)</code>, both of which scale predictably as the shape gets more complex. <code>shapeindices</code> has its own escape valve for this (<code>deterministic = FALSE</code>, or <code><a href="https://nkaza.github.io/shapeindices/reference/shape_indices.html" class="external-link">shape_indices()</a></code>’s own <code>deterministic_max_tri</code> argument to switch automatically) - the point isn’t that one package is “faster,” it’s that <code>gridmorph</code>’s cost model doesn’t have a quadratic cliff to fall off in the first place, because raster cell counts make that mode a non-starter from the start.</p>
