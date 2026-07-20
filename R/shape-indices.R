@@ -11,14 +11,24 @@
 ## expensive shared setup: `.valid_cells()`/`.mass_raster()` are cheap
 ## per-call raster derivations, not worth hoisting out. What IS worth
 ## doing once, not once per requested index: the planar-CRS check -
-## calling all 13 index functions independently on a missing-CRS raster
-## would otherwise print the same "no CRS" warning 13 times.
+## calling all 15 index functions independently on a missing-CRS raster
+## would otherwise print the same "no CRS" warning 15 times.
 
 ## canonical order - also what "all" expands to, and what the returned
-## vector's own names appear in regardless of the order `which` was given
+## vector's own names appear in regardless of the order `which` was given.
+## geodesic_span/geodesic_chord appended at the end (not interleaved with
+## their nearest conceptual siblings) - same "add new indices at the end,
+## don't renumber the existing ones" precedent detour/exchange followed
+## when THEY were added. Included in "all" despite costing O(size *
+## n_cells) - size sequential whole-raster terra::gridDist() calls (see
+## R/geodesic-index.R's own file header) - a substantially higher cost
+## than every other index here (all O(size) or cheaper): user's own
+## explicit call, "all" should mean all fifteen, not thirteen-plus-two-
+## you-have-to-know-to-ask-for.
 .ALL_GM_INDICES <- c("depth", "moment_of_inertia", "moment_isotropy", "directional_balance",
                      "convexity", "span", "radial_concentration", "hull_ratio", "polsby_popper",
-                     "width_length_ratio", "reock", "detour", "exchange")
+                     "width_length_ratio", "reock", "detour", "exchange",
+                     "geodesic_span", "geodesic_chord")
 
 ## the six classic metrics take no weighted/size/seed/n_bins arguments at
 ## all - see classical-metrics.R's own file header for why
@@ -58,10 +68,10 @@
 #'
 #' @param rast a terra SpatRaster - see [gm_depth_index()] for the shared
 #'   shape/hole conventions every index in this package uses.
-#' @param which `"all"` (default), or a character vector naming a subset
-#'   of these thirteen values - each listed here with the function it
-#'   actually calls, since the `which` string and the function name aren't
-#'   identical:
+#' @param which `"all"` (default, expands to all fifteen values below), or
+#'   a character vector naming a subset - each listed here with the
+#'   function it actually calls, since the `which` string and the
+#'   function name aren't identical:
 #'
 #'   * `"depth"` - [gm_depth_index()]
 #'   * `"moment_of_inertia"` - [gm_moment_of_inertia_index()]
@@ -76,21 +86,47 @@
 #'   * `"reock"` - [gm_reock_index()]
 #'   * `"detour"` - [gm_detour_index()]
 #'   * `"exchange"` - [gm_exchange_index()]
+#'   * `"geodesic_span"` - [gm_geodesic_span_index()] - substantially more
+#'     expensive than every index above (`n_points` sequential
+#'     whole-raster `terra::gridDist()` calls, not `O(size)` or cheaper -
+#'     see that function's own file header) but included in `"all"`
+#'     regardless, on the reasoning that `"all"` should mean all fifteen,
+#'     not thirteen-plus-two-you-have-to-know-to-ask-for. Its own sample
+#'     size is `n_points`, a DELIBERATELY DIFFERENT argument from `size`
+#'     (see its own doc) - lower `n_points` (via `...`) for a faster
+#'     `"all"` call if this matters; passing `size` here has no effect on
+#'     it at all.
+#'   * `"geodesic_chord"` - [gm_geodesic_chord_index()] - same cost note
+#'     and same `n_points` (not `size`) argument as `"geodesic_span"`
+#'     above.
 #'
-#'   The same short names `shapeindices::shape_indices()` uses, so results
-#'   from the two packages line up directly. An unrecognised name in
-#'   `which` errors immediately, listing all thirteen valid values.
-#' @param ... passed to whichever of the thirteen index functions actually
-#'   accept each named argument (e.g. `weighted` is accepted by the first
-#'   seven, silently ignored for the six classic metrics, which have no
-#'   weighted form at all - see their own file header for why; `size`/
-#'   `seed` are accepted only by the three Monte Carlo indices
+#'   The first thirteen names are the same short names
+#'   `shapeindices::shape_indices()` uses, so results from the two
+#'   packages line up directly for those (`shapeindices` has no
+#'   geodesic-distance indices to compare against - see
+#'   `shapeindices/explorations/NOTES-future-indices.md`). An
+#'   unrecognised name in `which` errors immediately, listing all fifteen
+#'   valid values.
+#' @param ... passed to whichever of the requested index functions accept
+#'   each named argument (e.g. `weighted` is accepted by `"depth"` through
+#'   `"radial_concentration"` and `"geodesic_span"`, silently ignored for
+#'   the six classic metrics and `"geodesic_chord"`, none of which have a
+#'   weighted form - see each's own file header for why; `size`/`seed` are
+#'   accepted by the three ORIGINAL Monte Carlo indices
 #'   (`gm_convexity_index()`/`gm_span_index()`/`gm_radial_concentration_index()`);
-#'   `n_bins` is accepted by `gm_depth_index()`/
+#'   `n_points`/`seed` are accepted by `gm_geodesic_span_index()`/
+#'   `gm_geodesic_chord_index()` instead - a DELIBERATELY DIFFERENT
+#'   argument name from `size`, not an inconsistency: these two cost
+#'   `O(n_points * n_cells)`, not `O(size)`, so sharing one argument name
+#'   would mean an ordinary `size = 3000` call (sensible for the other
+#'   three) silently driving 3000 sequential whole-raster
+#'   `terra::gridDist()` calls too - verified directly to cause a real,
+#'   surprising slowdown before this split (see R/geodesic-index.R's own
+#'   file header); `n_bins` is accepted by `gm_depth_index()`/
 #'   `gm_moment_of_inertia_index()`/`gm_span_index()`/
-#'   `gm_radial_concentration_index()` - passing it explicitly overrides
-#'   each of their own individual defaults, including `gm_span_index()`'s
-#'   deliberately smaller one).
+#'   `gm_radial_concentration_index()`/`gm_geodesic_span_index()` -
+#'   passing it explicitly overrides each of their own individual
+#'   defaults, including `gm_span_index()`'s deliberately smaller one).
 #' @return named numeric vector, one entry per requested index, in
 #'   canonical order
 #' @examples
@@ -148,6 +184,12 @@ gm_shape_indices <- function(rast, which = "all", ...) {
         if ("reock" %in% which) out["reock"] <- gm_reock_index(rast)$index
         if ("detour" %in% which) out["detour"] <- gm_detour_index(rast)$index
         if ("exchange" %in% which) out["exchange"] <- gm_exchange_index(rast)$index
+        if ("geodesic_span" %in% which) {
+            out["geodesic_span"] <- do.call(gm_geodesic_span_index, c(list(rast = rast), .dots_for(gm_geodesic_span_index, dots)))$index
+        }
+        if ("geodesic_chord" %in% which) {
+            out["geodesic_chord"] <- do.call(gm_geodesic_chord_index, c(list(rast = rast), .dots_for(gm_geodesic_chord_index, dots)))$index
+        }
     }))
 
     out[which]

@@ -164,10 +164,12 @@
     terra::ifel(valid, d, NA)
 }
 
-#' Depth index for a terra raster: mean distance from inside points to the
-#' shape's own boundary, relative to an equal-area circle. index in
-#' `(0, 1]`, `= 1` iff the shape is (almost everywhere) a disk - see the
-#' file header for the Brunn-Minkowski-based proof this ports from
+#' Depth index for a terra raster
+#'
+#' Mean distance from inside points to the shape's own boundary, relative
+#' to an equal-area circle. index in `(0, 1]`, `= 1` iff the shape is
+#' (almost everywhere) a disk - see the file header for the
+#' Brunn-Minkowski-based proof this ports from
 #' `shapeindices::depth_index()`. Handles holes and multi-part shapes with
 #' no special-casing at all: they're just cells with different values in
 #' one grid.

@@ -2,13 +2,7 @@
 % Please edit documentation in R/morphology.R
 \name{bottomhat}
 \alias{bottomhat}
-\title{Bottom-hat (black-hat) transform: highlights small dark gaps/notches
-narrower than the structuring element. For binary/continuous input,
-the real-valued residual \code{closing(mask) - mask} (reduces exactly to the
-classic \verb{closing(mask) AND NOT mask} when input is 0/1). For
-categorical input, a boolean indicator instead - \code{1} at cells that were
-unlabelled (\code{NA}) but got filled by \code{closing()} - since subtracting
-category codes is meaningless (see this file's own header for why).}
+\title{Bottom-hat (black-hat) transform of a terra SpatRaster}
 \usage{
 bottomhat(mask, kernel = se_box(1))
 }
@@ -26,6 +20,15 @@ value type and non-negativity; \code{NA} region described above, not the
 same one)
 }
 \description{
+Highlights small dark gaps/notches narrower than the structuring
+element. For binary/continuous input, the real-valued residual
+\code{closing(mask) - mask} (reduces exactly to the classic
+\verb{closing(mask) AND NOT mask} when input is 0/1). For categorical input,
+a boolean indicator instead - \code{1} at cells that were unlabelled (\code{NA})
+but got filled by \code{closing()} - since subtracting category codes is
+meaningless (see this file's own header for why).
+}
+\details{
 Binary/continuous input specifically: \code{NA} only where \code{mask} was
 ITSELF \code{NA} (genuinely missing data, not just background) AND beyond
 one \code{kernel} radius of \code{mask}'s own footprint - narrower than

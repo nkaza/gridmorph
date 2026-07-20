@@ -2,8 +2,7 @@
 % Please edit documentation in R/morphology.R
 \name{se_diamond}
 \alias{se_diamond}
-\title{Diamond (L1/Manhattan ball) structuring element: cell \verb{(dx, dy)}
-relative to centre is included iff \code{abs(dx) + abs(dy) <= radius}.}
+\title{Diamond (L1/Manhattan ball) structuring element}
 \usage{
 se_diamond(radius)
 }
@@ -15,6 +14,6 @@ a \code{(2*radius+1)}-wide matrix, \code{1} inside the diamond and \code{NA}
 outside it
 }
 \description{
-Diamond (L1/Manhattan ball) structuring element: cell \verb{(dx, dy)}
-relative to centre is included iff \code{abs(dx) + abs(dy) <= radius}.
+Cell \verb{(dx, dy)} relative to centre is included iff
+\code{abs(dx) + abs(dy) <= radius}.
 }

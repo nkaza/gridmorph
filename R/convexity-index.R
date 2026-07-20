@@ -27,13 +27,14 @@
 ## weighting needed, the same importance-sampling argument shapeindices'
 ## own Monte Carlo mode relies on.
 
-#' Convexity/dispersal index of a terra raster - the raster analogue of
-#' `shapeindices::convexity_index()`. 1 minus the expected fraction of a
-#' random interior line lying outside the shape. index in `[0, 1]`, `1` =
-#' convex; lower means more concave and/or more spatially dispersed.
-#' Handles holes and multi-part shapes with no special-casing: a line
-#' between two disjoint parts is mostly "outside", exactly like a vector
-#' MULTIPOLYGON's own line-clipping.
+#' Convexity/dispersal index of a terra raster
+#'
+#' The raster analogue of `shapeindices::convexity_index()`. 1 minus the
+#' expected fraction of a random interior line lying outside the shape.
+#' index in `[0, 1]`, `1` = convex; lower means more concave and/or more
+#' spatially dispersed. Handles holes and multi-part shapes with no
+#' special-casing: a line between two disjoint parts is mostly "outside",
+#' exactly like a vector MULTIPOLYGON's own line-clipping.
 #' @inheritParams gm_depth_index
 #' @param size number of points to sample (paired up consecutively into
 #'   `size %/% 2` lines) - matches `terra::spatSample()`'s own argument

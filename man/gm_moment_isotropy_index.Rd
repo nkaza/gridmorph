@@ -2,12 +2,7 @@
 % Please edit documentation in R/moment-indices.R
 \name{gm_moment_isotropy_index}
 \alias{gm_moment_isotropy_index}
-\title{Moment isotropy index for a terra raster - the raster analogue of
-\code{shapeindices::moment_isotropy_index()}. index in \verb{(0, 1]}, ratio of
-the smaller to larger principal moment of the mass inertia tensor -
-\verb{= 1} iff the mass distribution is rotationally isotropic about its
-own centroid (any shape with 3-fold or higher rotational symmetry
-qualifies, not only a disk).}
+\title{Moment isotropy index for a terra raster}
 \usage{
 gm_moment_isotropy_index(rast, weighted = TRUE)
 }
@@ -35,10 +30,9 @@ This check never fires on non-categorical (including plain binary
 list(index, Ixx, Iyy, Ixy, centroid)
 }
 \description{
-Moment isotropy index for a terra raster - the raster analogue of
-\code{shapeindices::moment_isotropy_index()}. index in \verb{(0, 1]}, ratio of
-the smaller to larger principal moment of the mass inertia tensor -
-\verb{= 1} iff the mass distribution is rotationally isotropic about its
-own centroid (any shape with 3-fold or higher rotational symmetry
-qualifies, not only a disk).
+The raster analogue of \code{shapeindices::moment_isotropy_index()}. index
+in \verb{(0, 1]}, ratio of the smaller to larger principal moment of the
+mass inertia tensor - \verb{= 1} iff the mass distribution is rotationally
+isotropic about its own centroid (any shape with 3-fold or higher
+rotational symmetry qualifies, not only a disk).
 }

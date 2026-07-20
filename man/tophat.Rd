@@ -2,13 +2,7 @@
 % Please edit documentation in R/morphology.R
 \name{tophat}
 \alias{tophat}
-\title{Top-hat transform: highlights small bright features/protrusions
-narrower than the structuring element. For binary/continuous input,
-the real-valued residual \code{mask - opening(mask)} (reduces exactly to the
-classic \verb{mask AND NOT opening(mask)} when input is 0/1). For
-categorical input, a boolean indicator instead - \code{1} at cells that had
-a label but lost it under \code{opening()} - since subtracting category
-codes is meaningless (see this file's own header for why).}
+\title{Top-hat (white-hat) transform of a terra SpatRaster}
 \usage{
 tophat(mask, kernel = se_box(1))
 }
@@ -30,6 +24,15 @@ grayscale morphology in general). Categorical input: plain \code{0}/\code{1},
 not itself categorical - the result is a flag, not a category.
 }
 \description{
+Highlights small bright features/protrusions narrower than the
+structuring element. For binary/continuous input, the real-valued
+residual \code{mask - opening(mask)} (reduces exactly to the classic
+\verb{mask AND NOT opening(mask)} when input is 0/1). For categorical input,
+a boolean indicator instead - \code{1} at cells that had a label but lost it
+under \code{opening()} - since subtracting category codes is meaningless
+(see this file's own header for why).
+}
+\details{
 Binary/continuous input specifically: \code{NA} outside \code{mask}'s own
 footprint, not a numeric \code{0} - \code{opening()}'s own output never actually
 contains \code{NA} for non-categorical input (\code{.mask01()} replaces \code{NA}

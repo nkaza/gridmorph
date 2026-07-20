@@ -117,8 +117,9 @@
     sum(density_sorted * (S^2 - S_prev^2)) / (2 * pi)
 }
 
-#' Polar moment-of-inertia compactness/dispersal index for a terra raster -
-#' the raster analogue of `shapeindices::moment_of_inertia_index()`. index
+#' Polar moment-of-inertia compactness/dispersal index for a terra raster
+#'
+#' The raster analogue of `shapeindices::moment_of_inertia_index()`. index
 #' in `(0, 1]`, `= 1` iff the shape is (almost everywhere) a disk.
 #' @inheritParams gm_depth_index
 #' @return list(index, J, Ixx, Iyy, Ixy, J_ref, area, centroid)
@@ -147,12 +148,13 @@ gm_moment_of_inertia_index <- function(rast, weighted = TRUE, n_bins = 1000) {
          J_ref = J_ref, area = area, centroid = core$G)
 }
 
-#' Moment isotropy index for a terra raster - the raster analogue of
-#' `shapeindices::moment_isotropy_index()`. index in `(0, 1]`, ratio of
-#' the smaller to larger principal moment of the mass inertia tensor -
-#' `= 1` iff the mass distribution is rotationally isotropic about its
-#' own centroid (any shape with 3-fold or higher rotational symmetry
-#' qualifies, not only a disk).
+#' Moment isotropy index for a terra raster
+#'
+#' The raster analogue of `shapeindices::moment_isotropy_index()`. index
+#' in `(0, 1]`, ratio of the smaller to larger principal moment of the
+#' mass inertia tensor - `= 1` iff the mass distribution is rotationally
+#' isotropic about its own centroid (any shape with 3-fold or higher
+#' rotational symmetry qualifies, not only a disk).
 #' @inheritParams gm_depth_index
 #' @return list(index, Ixx, Iyy, Ixy, centroid)
 #' @export
@@ -180,13 +182,14 @@ gm_moment_isotropy_index <- function(rast, weighted = TRUE) {
          Ixx = core$Ixx, Iyy = core$Iyy, Ixy = core$Ixy, centroid = core$G)
 }
 
-#' Directional balance index for a terra raster - the raster analogue of
-#' `shapeindices::directional_balance_index()`. index in `[0, 1]`,
-#' `= 1 - R` where `R` is the mean resultant length of the mass
-#' distribution's own bearing (not distance) from its centroid. `R = 0`
-#' (index = 1) means the directional pulls cancel - true for a disk, but
-#' also for any shape with 2-fold or higher rotational symmetry (a symmetric
-#' dumbbell scores 1 here).
+#' Directional balance index for a terra raster
+#'
+#' The raster analogue of `shapeindices::directional_balance_index()`.
+#' index in `[0, 1]`, `= 1 - R` where `R` is the mean resultant length of
+#' the mass distribution's own bearing (not distance) from its centroid.
+#' `R = 0` (index = 1) means the directional pulls cancel - true for a
+#' disk, but also for any shape with 2-fold or higher rotational symmetry
+#' (a symmetric dumbbell scores 1 here).
 #' @inheritParams gm_depth_index
 #' @return list(index, R, centroid)
 #' @export

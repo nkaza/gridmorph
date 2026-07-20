@@ -2,13 +2,7 @@
 % Please edit documentation in R/depth-index.R
 \name{gm_depth_index}
 \alias{gm_depth_index}
-\title{Depth index for a terra raster: mean distance from inside points to the
-shape's own boundary, relative to an equal-area circle. index in
-\verb{(0, 1]}, \verb{= 1} iff the shape is (almost everywhere) a disk - see the
-file header for the Brunn-Minkowski-based proof this ports from
-\code{shapeindices::depth_index()}. Handles holes and multi-part shapes with
-no special-casing at all: they're just cells with different values in
-one grid.}
+\title{Depth index for a terra raster}
 \usage{
 gm_depth_index(rast, weighted = TRUE, n_bins = 1000)
 }
@@ -49,10 +43,10 @@ rasterized disk of the same cell size and area as \code{rast} (not on
 used here the way every other index in this package uses one.
 }
 \description{
-Depth index for a terra raster: mean distance from inside points to the
-shape's own boundary, relative to an equal-area circle. index in
-\verb{(0, 1]}, \verb{= 1} iff the shape is (almost everywhere) a disk - see the
-file header for the Brunn-Minkowski-based proof this ports from
+Mean distance from inside points to the shape's own boundary, relative
+to an equal-area circle. index in \verb{(0, 1]}, \verb{= 1} iff the shape is
+(almost everywhere) a disk - see the file header for the
+Brunn-Minkowski-based proof this ports from
 \code{shapeindices::depth_index()}. Handles holes and multi-part shapes with
 no special-casing at all: they're just cells with different values in
 one grid.

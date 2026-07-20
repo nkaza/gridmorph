@@ -2,12 +2,7 @@
 % Please edit documentation in R/morphology.R
 \name{closing}
 \alias{closing}
-\title{Morphological closing (dilate then erode) of a terra SpatRaster - fills
-small dark gaps/notches without growing the overall shape the way
-\code{dilate()} alone does. Generalizes to continuous input as grayscale
-closing, and to categorical input as label-image closing (fills small
-gaps within a class region), the same operation in each case, via
-\code{erode()}/\code{dilate()}'s own dispatch.}
+\title{Morphological closing (dilate then erode) of a terra SpatRaster}
 \usage{
 closing(mask, kernel = se_box(1))
 }
@@ -23,8 +18,7 @@ any other value errors (see \code{.check_kernel()}'s own comments for why).}
 SpatRaster, same grid and value type as \code{mask} (see \code{erode()})
 }
 \description{
-Morphological closing (dilate then erode) of a terra SpatRaster - fills
-small dark gaps/notches without growing the overall shape the way
+Fills small dark gaps/notches without growing the overall shape the way
 \code{dilate()} alone does. Generalizes to continuous input as grayscale
 closing, and to categorical input as label-image closing (fills small
 gaps within a class region), the same operation in each case, via

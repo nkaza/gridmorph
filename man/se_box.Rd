@@ -2,8 +2,7 @@
 % Please edit documentation in R/morphology.R
 \name{se_box}
 \alias{se_box}
-\title{Square structuring element, \code{radius} cells in every direction (so a
-\code{2*radius + 1} wide matrix of all \code{1}s).}
+\title{Square structuring element}
 \usage{
 se_box(radius)
 }
@@ -14,6 +13,6 @@ se_box(radius)
 a plain matrix, all \code{1}s
 }
 \description{
-Square structuring element, \code{radius} cells in every direction (so a
-\code{2*radius + 1} wide matrix of all \code{1}s).
+\code{radius} cells in every direction (so a \code{2*radius + 1} wide matrix of
+all \code{1}s).
 }

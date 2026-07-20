@@ -2,9 +2,7 @@
 % Please edit documentation in R/moment-indices.R
 \name{gm_moment_of_inertia_index}
 \alias{gm_moment_of_inertia_index}
-\title{Polar moment-of-inertia compactness/dispersal index for a terra raster -
-the raster analogue of \code{shapeindices::moment_of_inertia_index()}. index
-in \verb{(0, 1]}, \verb{= 1} iff the shape is (almost everywhere) a disk.}
+\title{Polar moment-of-inertia compactness/dispersal index for a terra raster}
 \usage{
 gm_moment_of_inertia_index(rast, weighted = TRUE, n_bins = 1000)
 }
@@ -41,7 +39,6 @@ relative error on a genuinely non-uniform weight pattern; see
 list(index, J, Ixx, Iyy, Ixy, J_ref, area, centroid)
 }
 \description{
-Polar moment-of-inertia compactness/dispersal index for a terra raster -
-the raster analogue of \code{shapeindices::moment_of_inertia_index()}. index
+The raster analogue of \code{shapeindices::moment_of_inertia_index()}. index
 in \verb{(0, 1]}, \verb{= 1} iff the shape is (almost everywhere) a disk.
 }

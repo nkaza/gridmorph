@@ -166,8 +166,10 @@
 ##    it. A property of mathematical morphology in general, not specific
 ##    to this package, and not validated against here.
 
-#' Square structuring element, `radius` cells in every direction (so a
-#' `2*radius + 1` wide matrix of all `1`s).
+#' Square structuring element
+#'
+#' `radius` cells in every direction (so a `2*radius + 1` wide matrix of
+#' all `1`s).
 #' @param radius integer >= 0
 #' @return a plain matrix, all `1`s
 #' @export
@@ -175,8 +177,10 @@ se_box <- function(radius) {
     matrix(1, 2L * as.integer(radius) + 1L, 2L * as.integer(radius) + 1L)
 }
 
-#' Disc (Euclidean ball) structuring element: cell `(dx, dy)` relative to
-#' centre is included iff `dx^2 + dy^2 <= radius^2`.
+#' Disc (Euclidean ball) structuring element
+#'
+#' Cell `(dx, dy)` relative to centre is included iff
+#' `dx^2 + dy^2 <= radius^2`.
 #' @inheritParams se_box
 #' @return a `(2*radius+1)`-wide matrix, `1` inside the disc and `NA`
 #'   outside it (matching `terra::focal()`'s own convention for a
@@ -191,8 +195,10 @@ se_disc <- function(radius) {
     k
 }
 
-#' Diamond (L1/Manhattan ball) structuring element: cell `(dx, dy)`
-#' relative to centre is included iff `abs(dx) + abs(dy) <= radius`.
+#' Diamond (L1/Manhattan ball) structuring element
+#'
+#' Cell `(dx, dy)` relative to centre is included iff
+#' `abs(dx) + abs(dy) <= radius`.
 #' @inheritParams se_box
 #' @return a `(2*radius+1)`-wide matrix, `1` inside the diamond and `NA`
 #'   outside it
@@ -281,13 +287,15 @@ se_diamond <- function(radius) {
     terra::focal(.mask01(mask), w = kernel, fun = max, na.rm = TRUE)
 }
 
-#' Morphological erosion of a terra SpatRaster - for binary (0/1) or
-#' continuous input, the local minimum over `kernel`'s footprint at every
-#' cell (grayscale erosion, a strict generalization of binary erosion, not
-#' a different operation); for a categorical (`terra::is.factor()`) input,
-#' standard label-image erosion - a cell keeps its own label only if its
-#' entire neighbourhood shares it, otherwise it becomes `NA` (see this
-#' file's own header for the full reasoning behind both).
+#' Morphological erosion of a terra SpatRaster
+#'
+#' For binary (0/1) or continuous input, the local minimum over `kernel`'s
+#' footprint at every cell (grayscale erosion, a strict generalization of
+#' binary erosion, not a different operation); for a categorical
+#' (`terra::is.factor()`) input, standard label-image erosion - a cell
+#' keeps its own label only if its entire neighbourhood shares it,
+#' otherwise it becomes `NA` (see this file's own header for the full
+#' reasoning behind both).
 #' @param mask binary, continuous, or categorical SpatRaster
 #' @param kernel a structuring element: any matrix, or one of `se_box()`,
 #'   `se_disc()`, `se_diamond()`. `1` includes a cell in the footprint,
@@ -307,14 +315,15 @@ erode <- function(mask, kernel = se_box(1)) {
     .erode_core(mask, kernel)
 }
 
-#' Morphological dilation of a terra SpatRaster - for binary (0/1) or
-#' continuous input, the local maximum over `kernel`'s footprint at every
-#' cell (grayscale dilation, a strict generalization of binary dilation,
-#' not a different operation); for a categorical (`terra::is.factor()`)
-#' input, standard label-image dilation - already-labelled cells are left
-#' untouched, and `NA` cells are filled with the majority label among
-#' their real-valued neighbours (see this file's own header for the full
-#' reasoning behind both).
+#' Morphological dilation of a terra SpatRaster
+#'
+#' For binary (0/1) or continuous input, the local maximum over `kernel`'s
+#' footprint at every cell (grayscale dilation, a strict generalization of
+#' binary dilation, not a different operation); for a categorical
+#' (`terra::is.factor()`) input, standard label-image dilation -
+#' already-labelled cells are left untouched, and `NA` cells are filled
+#' with the majority label among their real-valued neighbours (see this
+#' file's own header for the full reasoning behind both).
 #' @inheritParams erode
 #' @return SpatRaster, same grid and value type as `mask` (see `erode()`)
 #' @examples
@@ -329,8 +338,9 @@ dilate <- function(mask, kernel = se_box(1)) {
     .dilate_core(mask, kernel)
 }
 
-#' Morphological opening (erode then dilate) of a terra SpatRaster -
-#' removes small bright features and thin protrusions without shrinking
+#' Morphological opening (erode then dilate) of a terra SpatRaster
+#'
+#' Removes small bright features and thin protrusions without shrinking
 #' the overall shape the way `erode()` alone does. Generalizes to
 #' continuous input as grayscale opening, and to categorical input as
 #' label-image opening (removes small/thin single-class regions), the
@@ -344,8 +354,9 @@ opening <- function(mask, kernel = se_box(1)) {
     .dilate_core(.erode_core(mask, kernel), kernel)
 }
 
-#' Morphological closing (dilate then erode) of a terra SpatRaster - fills
-#' small dark gaps/notches without growing the overall shape the way
+#' Morphological closing (dilate then erode) of a terra SpatRaster
+#'
+#' Fills small dark gaps/notches without growing the overall shape the way
 #' `dilate()` alone does. Generalizes to continuous input as grayscale
 #' closing, and to categorical input as label-image closing (fills small
 #' gaps within a class region), the same operation in each case, via
@@ -359,13 +370,15 @@ closing <- function(mask, kernel = se_box(1)) {
     .erode_core(.dilate_core(mask, kernel), kernel)
 }
 
-#' Top-hat transform: highlights small bright features/protrusions
-#' narrower than the structuring element. For binary/continuous input,
-#' the real-valued residual `mask - opening(mask)` (reduces exactly to the
-#' classic `mask AND NOT opening(mask)` when input is 0/1). For
-#' categorical input, a boolean indicator instead - `1` at cells that had
-#' a label but lost it under `opening()` - since subtracting category
-#' codes is meaningless (see this file's own header for why).
+#' Top-hat (white-hat) transform of a terra SpatRaster
+#'
+#' Highlights small bright features/protrusions narrower than the
+#' structuring element. For binary/continuous input, the real-valued
+#' residual `mask - opening(mask)` (reduces exactly to the classic
+#' `mask AND NOT opening(mask)` when input is 0/1). For categorical input,
+#' a boolean indicator instead - `1` at cells that had a label but lost it
+#' under `opening()` - since subtracting category codes is meaningless
+#' (see this file's own header for why).
 #'
 #' Binary/continuous input specifically: `NA` outside `mask`'s own
 #' footprint, not a numeric `0` - `opening()`'s own output never actually
@@ -393,13 +406,15 @@ tophat <- function(mask, kernel = se_box(1)) {
     terra::ifel(is.na(mask), NA, .mask01(mask) - o)
 }
 
-#' Bottom-hat (black-hat) transform: highlights small dark gaps/notches
-#' narrower than the structuring element. For binary/continuous input,
-#' the real-valued residual `closing(mask) - mask` (reduces exactly to the
-#' classic `closing(mask) AND NOT mask` when input is 0/1). For
-#' categorical input, a boolean indicator instead - `1` at cells that were
-#' unlabelled (`NA`) but got filled by `closing()` - since subtracting
-#' category codes is meaningless (see this file's own header for why).
+#' Bottom-hat (black-hat) transform of a terra SpatRaster
+#'
+#' Highlights small dark gaps/notches narrower than the structuring
+#' element. For binary/continuous input, the real-valued residual
+#' `closing(mask) - mask` (reduces exactly to the classic
+#' `closing(mask) AND NOT mask` when input is 0/1). For categorical input,
+#' a boolean indicator instead - `1` at cells that were unlabelled (`NA`)
+#' but got filled by `closing()` - since subtracting category codes is
+#' meaningless (see this file's own header for why).
 #'
 #' Binary/continuous input specifically: `NA` only where `mask` was
 #' ITSELF `NA` (genuinely missing data, not just background) AND beyond

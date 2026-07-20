@@ -645,20 +645,50 @@
 #'   here, not its actual TRUE/FALSE pattern
 #' @param formula which index's own cost this ceiling protects: `"point"`
 #'   (O(size) - `gm_span_index()`'s/`gm_radial_concentration_index()`'s own
-#'   sampled point cloud) or `"line"` (O(size * raster diagonal in cells) -
+#'   sampled point cloud), `"line"` (O(size * raster diagonal in cells) -
 #'   `gm_convexity_index()`'s own per-line raster discretisation, the more
 #'   expensive of the two, since each line needs its own raster-resolution
-#'   sub-sampling, not just its two endpoints)
+#'   sub-sampling, not just its two endpoints), or `"geodesic"` (see below)
 #' @param bytes_per_unit conservative bytes needed per point (`formula =
-#'   "point"`) or per discretised line sub-point (`formula = "line"`)
+#'   "point"`) or per discretised line sub-point (`formula = "line"`) -
+#'   unused for `formula = "geodesic"`, which has its own, differently-
+#'   scaled constant (see below)
 #' @param mem_fraction fraction of estimated available memory to budget
-#' @return integer >= 1, the largest `size` considered safe
+#' @return integer >= 1, the largest `size` (or, for `"geodesic"`, `K`)
+#'   considered safe
 #' @noRd
-.safe_mc_size_ceiling <- function(valid, formula = c("point", "line"), bytes_per_unit = 64, mem_fraction = 0.2) {
+.safe_mc_size_ceiling <- function(valid, formula = c("point", "line", "geodesic"), bytes_per_unit = 64, mem_fraction = 0.2) {
     formula <- match.arg(formula)
     budget_bytes <- .available_memory_mb() * 1024^2 * mem_fraction
     max_units <- budget_bytes / bytes_per_unit
     if (formula == "point") return(max(1L, as.integer(floor(max_units))))
+
+    if (formula == "geodesic") {
+        # gm_geodesic_span_index()/gm_geodesic_chord_index()'s own K
+        # sampled points each cost one WHOLE-RASTER terra::gridDist()
+        # call (K calls total, run sequentially, each result discarded
+        # once its own K-1 pairwise distances are read off) - genuinely a
+        # different cost shape from "point"/"line" above: each individual
+        # call is itself already a chunk-safe, terra-native operation (the
+        # same way gm_depth_index()'s own single terra::distance() call
+        # needs no ceiling at all), so the real resource being protected
+        # here is WALL-CLOCK TIME (K sequential whole-raster sweeps), not
+        # peak memory. Still expressed as a memory-budget-shaped
+        # ceiling, reusing `.available_memory_mb()` only as this
+        # package's own already-established proxy for "how much
+        # computation this machine can reasonably absorb" - not a literal
+        # per-cell memory accounting the way "point"/"line" are. The
+        # constant below (not `bytes_per_unit`, which is scaled for a
+        # genuinely different unit) is calibrated directly against a
+        # measured benchmark (~5e-8 seconds/cell/call on ordinary
+        # hardware - K=100 on a 1.44M-cell raster took ~7s), targeting a
+        # ceiling in the single-digit-to-low-tens-of-seconds range at the
+        # `mem_fraction`-scaled budget rather than a true memory bound.
+        n_cells <- terra::ncell(valid)
+        geodesic_unit_bytes <- 2
+        max_geo_units <- budget_bytes / geodesic_unit_bytes
+        return(max(1L, as.integer(floor(max_geo_units / n_cells))))
+    }
 
     # "line": each of size/2 lines needs ~diag_cells sub-points at raster
     # resolution (half a cell diagonal step) - diag_cells (the raster's
@@ -670,13 +700,19 @@
 
 #' Hard-stop (not a silent clamp) if `size` exceeds the memory-derived
 #' ceiling - consistent with every other ceiling in this package.
+#' @param arg_name the caller's own argument name for `size` in its error
+#'   message - `"size"` for every caller except `gm_geodesic_span_index()`/
+#'   `gm_geodesic_chord_index()`, which call this with their own
+#'   `n_points` value under a deliberately different argument name (see
+#'   R/geodesic-index.R's own file header for why) and need the error
+#'   text to say so, not "size"
 #' @noRd
-.check_mc_size <- function(size, valid, formula, fn_name) {
+.check_mc_size <- function(size, valid, formula, fn_name, arg_name = "size") {
     ceiling_size <- .safe_mc_size_ceiling(valid, formula = formula)
     if (size > ceiling_size) {
-        stop(fn_name, "(): `size` (", size, ") exceeds the estimated safe ceiling (",
+        stop(fn_name, "(): `", arg_name, "` (", size, ") exceeds the estimated safe ceiling (",
              ceiling_size, ") given available memory and this raster's extent. ",
-             "Lower `size`, or free up memory before calling again - not silently clamped.")
+             "Lower `", arg_name, "`, or free up memory before calling again - not silently clamped.")
     }
 }
 

@@ -2,12 +2,7 @@
 % Please edit documentation in R/morphology.R
 \name{opening}
 \alias{opening}
-\title{Morphological opening (erode then dilate) of a terra SpatRaster -
-removes small bright features and thin protrusions without shrinking
-the overall shape the way \code{erode()} alone does. Generalizes to
-continuous input as grayscale opening, and to categorical input as
-label-image opening (removes small/thin single-class regions), the
-same operation in each case, via \code{erode()}/\code{dilate()}'s own dispatch.}
+\title{Morphological opening (erode then dilate) of a terra SpatRaster}
 \usage{
 opening(mask, kernel = se_box(1))
 }
@@ -23,8 +18,7 @@ any other value errors (see \code{.check_kernel()}'s own comments for why).}
 SpatRaster, same grid and value type as \code{mask} (see \code{erode()})
 }
 \description{
-Morphological opening (erode then dilate) of a terra SpatRaster -
-removes small bright features and thin protrusions without shrinking
+Removes small bright features and thin protrusions without shrinking
 the overall shape the way \code{erode()} alone does. Generalizes to
 continuous input as grayscale opening, and to categorical input as
 label-image opening (removes small/thin single-class regions), the

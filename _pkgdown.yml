@@ -1,0 +1,11 @@
+url: https://nkaza.github.io/gridmorph/
+template:
+  bootstrap: 5
+articles:
+- title: Articles
+  navbar: ~
+  contents:
+  - a-basic-usage
+  - b-morphological-operators
+  - c-comparison-with-shapeindices
+  - d-resolution-matched-references

@@ -2,13 +2,7 @@
 % Please edit documentation in R/moment-indices.R
 \name{gm_directional_balance_index}
 \alias{gm_directional_balance_index}
-\title{Directional balance index for a terra raster - the raster analogue of
-\code{shapeindices::directional_balance_index()}. index in \verb{[0, 1]},
-\verb{= 1 - R} where \code{R} is the mean resultant length of the mass
-distribution's own bearing (not distance) from its centroid. \code{R = 0}
-(index = 1) means the directional pulls cancel - true for a disk, but
-also for any shape with 2-fold or higher rotational symmetry (a symmetric
-dumbbell scores 1 here).}
+\title{Directional balance index for a terra raster}
 \usage{
 gm_directional_balance_index(rast, weighted = TRUE)
 }
@@ -36,11 +30,10 @@ This check never fires on non-categorical (including plain binary
 list(index, R, centroid)
 }
 \description{
-Directional balance index for a terra raster - the raster analogue of
-\code{shapeindices::directional_balance_index()}. index in \verb{[0, 1]},
-\verb{= 1 - R} where \code{R} is the mean resultant length of the mass
-distribution's own bearing (not distance) from its centroid. \code{R = 0}
-(index = 1) means the directional pulls cancel - true for a disk, but
-also for any shape with 2-fold or higher rotational symmetry (a symmetric
-dumbbell scores 1 here).
+The raster analogue of \code{shapeindices::directional_balance_index()}.
+index in \verb{[0, 1]}, \verb{= 1 - R} where \code{R} is the mean resultant length of
+the mass distribution's own bearing (not distance) from its centroid.
+\code{R = 0} (index = 1) means the directional pulls cancel - true for a
+disk, but also for any shape with 2-fold or higher rotational symmetry
+(a symmetric dumbbell scores 1 here).
 }

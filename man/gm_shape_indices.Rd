@@ -10,10 +10,10 @@ gm_shape_indices(rast, which = "all", ...)
 \item{rast}{a terra SpatRaster - see \code{\link[=gm_depth_index]{gm_depth_index()}} for the shared
 shape/hole conventions every index in this package uses.}
 
-\item{which}{\code{"all"} (default), or a character vector naming a subset
-of these thirteen values - each listed here with the function it
-actually calls, since the \code{which} string and the function name aren't
-identical:
+\item{which}{\code{"all"} (default, expands to all fifteen values below), or
+a character vector naming a subset - each listed here with the
+function it actually calls, since the \code{which} string and the
+function name aren't identical:
 \itemize{
 \item \code{"depth"} - \code{\link[=gm_depth_index]{gm_depth_index()}}
 \item \code{"moment_of_inertia"} - \code{\link[=gm_moment_of_inertia_index]{gm_moment_of_inertia_index()}}
@@ -28,23 +28,49 @@ identical:
 \item \code{"reock"} - \code{\link[=gm_reock_index]{gm_reock_index()}}
 \item \code{"detour"} - \code{\link[=gm_detour_index]{gm_detour_index()}}
 \item \code{"exchange"} - \code{\link[=gm_exchange_index]{gm_exchange_index()}}
+\item \code{"geodesic_span"} - \code{\link[=gm_geodesic_span_index]{gm_geodesic_span_index()}} - substantially more
+expensive than every index above (\code{n_points} sequential
+whole-raster \code{terra::gridDist()} calls, not \code{O(size)} or cheaper -
+see that function's own file header) but included in \code{"all"}
+regardless, on the reasoning that \code{"all"} should mean all fifteen,
+not thirteen-plus-two-you-have-to-know-to-ask-for. Its own sample
+size is \code{n_points}, a DELIBERATELY DIFFERENT argument from \code{size}
+(see its own doc) - lower \code{n_points} (via \code{...}) for a faster
+\code{"all"} call if this matters; passing \code{size} here has no effect on
+it at all.
+\item \code{"geodesic_chord"} - \code{\link[=gm_geodesic_chord_index]{gm_geodesic_chord_index()}} - same cost note
+and same \code{n_points} (not \code{size}) argument as \code{"geodesic_span"}
+above.
 }
 
-The same short names \code{shapeindices::shape_indices()} uses, so results
-from the two packages line up directly. An unrecognised name in
-\code{which} errors immediately, listing all thirteen valid values.}
+The first thirteen names are the same short names
+\code{shapeindices::shape_indices()} uses, so results from the two
+packages line up directly for those (\code{shapeindices} has no
+geodesic-distance indices to compare against - see
+\code{shapeindices/explorations/NOTES-future-indices.md}). An
+unrecognised name in \code{which} errors immediately, listing all fifteen
+valid values.}
 
-\item{...}{passed to whichever of the thirteen index functions actually
-accept each named argument (e.g. \code{weighted} is accepted by the first
-seven, silently ignored for the six classic metrics, which have no
-weighted form at all - see their own file header for why; \code{size}/
-\code{seed} are accepted only by the three Monte Carlo indices
+\item{...}{passed to whichever of the requested index functions accept
+each named argument (e.g. \code{weighted} is accepted by \code{"depth"} through
+\code{"radial_concentration"} and \code{"geodesic_span"}, silently ignored for
+the six classic metrics and \code{"geodesic_chord"}, none of which have a
+weighted form - see each's own file header for why; \code{size}/\code{seed} are
+accepted by the three ORIGINAL Monte Carlo indices
 (\code{gm_convexity_index()}/\code{gm_span_index()}/\code{gm_radial_concentration_index()});
-\code{n_bins} is accepted by \code{gm_depth_index()}/
+\code{n_points}/\code{seed} are accepted by \code{gm_geodesic_span_index()}/
+\code{gm_geodesic_chord_index()} instead - a DELIBERATELY DIFFERENT
+argument name from \code{size}, not an inconsistency: these two cost
+\code{O(n_points * n_cells)}, not \code{O(size)}, so sharing one argument name
+would mean an ordinary \code{size = 3000} call (sensible for the other
+three) silently driving 3000 sequential whole-raster
+\code{terra::gridDist()} calls too - verified directly to cause a real,
+surprising slowdown before this split (see R/geodesic-index.R's own
+file header); \code{n_bins} is accepted by \code{gm_depth_index()}/
 \code{gm_moment_of_inertia_index()}/\code{gm_span_index()}/
-\code{gm_radial_concentration_index()} - passing it explicitly overrides
-each of their own individual defaults, including \code{gm_span_index()}'s
-deliberately smaller one).}
+\code{gm_radial_concentration_index()}/\code{gm_geodesic_span_index()} -
+passing it explicitly overrides each of their own individual
+defaults, including \code{gm_span_index()}'s deliberately smaller one).}
 }
 \value{
 named numeric vector, one entry per requested index, in

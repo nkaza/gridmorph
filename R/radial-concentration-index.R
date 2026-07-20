@@ -65,13 +65,14 @@
     list(center = c_t, D1 = obj)
 }
 
-#' Radial concentration index for a terra raster - the raster analogue of
-#' `shapeindices::radial_concentration_index()`. `D1_ref/D1`, in
-#' `(0, 1]`, where `D1` is the mean distance from random interior points
-#' to the shape's own geometric median (the point minimising that mean
-#' distance - not the centroid) and `D1_ref` is the same quantity for the
-#' reference shape (a circle, unweighted; a concentric annulus, weighted) -
-#' both provable minimisers of `D1`.
+#' Radial concentration index for a terra raster
+#'
+#' The raster analogue of `shapeindices::radial_concentration_index()`.
+#' `D1_ref/D1`, in `(0, 1]`, where `D1` is the mean distance from random
+#' interior points to the shape's own geometric median (the point
+#' minimising that mean distance - not the centroid) and `D1_ref` is the
+#' same quantity for the reference shape (a circle, unweighted; a
+#' concentric annulus, weighted) - both provable minimisers of `D1`.
 #' @inheritParams gm_depth_index
 #' @param size number of points to sample and run Weiszfeld's algorithm
 #'   on directly (no pairing, unlike `gm_convexity_index()`/`gm_span_index()`) -

@@ -1,6 +1,6 @@
 Package: gridmorph
 Title: Raster-Native Shape Indices and Morphological Operators via 'terra'
-Version: 0.1.0
+Version: 0.2.0
 Authors@R:
     person("Nikhil", "Kaza", , "kaza@cs.unc.edu", role = c("aut", "cre"))
 Description: Computes shape/compactness/dispersal indices for a single
@@ -34,9 +34,10 @@ Suggests:
     furrr,
     testthat (>= 3.1.4),
     knitr,
+    quarto,
     rmarkdown
 Config/testthat/edition: 3
-VignetteBuilder: knitr
+VignetteBuilder: quarto
 URL: https://github.com/nkaza/gridmorph
 BugReports: https://github.com/nkaza/gridmorph/issues
 Config/roxygen2/version: 8.0.0

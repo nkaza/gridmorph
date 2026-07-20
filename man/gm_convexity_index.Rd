@@ -2,13 +2,7 @@
 % Please edit documentation in R/convexity-index.R
 \name{gm_convexity_index}
 \alias{gm_convexity_index}
-\title{Convexity/dispersal index of a terra raster - the raster analogue of
-\code{shapeindices::convexity_index()}. 1 minus the expected fraction of a
-random interior line lying outside the shape. index in \verb{[0, 1]}, \code{1} =
-convex; lower means more concave and/or more spatially dispersed.
-Handles holes and multi-part shapes with no special-casing: a line
-between two disjoint parts is mostly "outside", exactly like a vector
-MULTIPOLYGON's own line-clipping.}
+\title{Convexity/dispersal index of a terra raster}
 \usage{
 gm_convexity_index(rast, weighted = TRUE, size = 3000, seed = NULL)
 }
@@ -45,13 +39,12 @@ clamp, if exceeded.}
 \code{list(index, n_lines, area, n_valid_cells)}
 }
 \description{
-Convexity/dispersal index of a terra raster - the raster analogue of
-\code{shapeindices::convexity_index()}. 1 minus the expected fraction of a
-random interior line lying outside the shape. index in \verb{[0, 1]}, \code{1} =
-convex; lower means more concave and/or more spatially dispersed.
-Handles holes and multi-part shapes with no special-casing: a line
-between two disjoint parts is mostly "outside", exactly like a vector
-MULTIPOLYGON's own line-clipping.
+The raster analogue of \code{shapeindices::convexity_index()}. 1 minus the
+expected fraction of a random interior line lying outside the shape.
+index in \verb{[0, 1]}, \code{1} = convex; lower means more concave and/or more
+spatially dispersed. Handles holes and multi-part shapes with no
+special-casing: a line between two disjoint parts is mostly "outside",
+exactly like a vector MULTIPOLYGON's own line-clipping.
 }
 \examples{
 r <- terra::rast(nrows = 40, ncols = 40, xmin = 0, xmax = 40, ymin = 0, ymax = 40, crs = "local")

@@ -2,14 +2,7 @@
 % Please edit documentation in R/morphology.R
 \name{dilate}
 \alias{dilate}
-\title{Morphological dilation of a terra SpatRaster - for binary (0/1) or
-continuous input, the local maximum over \code{kernel}'s footprint at every
-cell (grayscale dilation, a strict generalization of binary dilation,
-not a different operation); for a categorical (\code{terra::is.factor()})
-input, standard label-image dilation - already-labelled cells are left
-untouched, and \code{NA} cells are filled with the majority label among
-their real-valued neighbours (see this file's own header for the full
-reasoning behind both).}
+\title{Morphological dilation of a terra SpatRaster}
 \usage{
 dilate(mask, kernel = se_box(1))
 }
@@ -25,14 +18,13 @@ any other value errors (see \code{.check_kernel()}'s own comments for why).}
 SpatRaster, same grid and value type as \code{mask} (see \code{erode()})
 }
 \description{
-Morphological dilation of a terra SpatRaster - for binary (0/1) or
-continuous input, the local maximum over \code{kernel}'s footprint at every
-cell (grayscale dilation, a strict generalization of binary dilation,
-not a different operation); for a categorical (\code{terra::is.factor()})
-input, standard label-image dilation - already-labelled cells are left
-untouched, and \code{NA} cells are filled with the majority label among
-their real-valued neighbours (see this file's own header for the full
-reasoning behind both).
+For binary (0/1) or continuous input, the local maximum over \code{kernel}'s
+footprint at every cell (grayscale dilation, a strict generalization of
+binary dilation, not a different operation); for a categorical
+(\code{terra::is.factor()}) input, standard label-image dilation -
+already-labelled cells are left untouched, and \code{NA} cells are filled
+with the majority label among their real-valued neighbours (see this
+file's own header for the full reasoning behind both).
 }
 \examples{
 r <- terra::rast(nrows = 20, ncols = 20, xmin = 0, xmax = 20, ymin = 0, ymax = 20, crs = "local")

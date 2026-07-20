@@ -160,13 +160,14 @@
 
 ## -- the span index itself ----------------------------------------------
 
-#' Span index for a terra raster - the raster analogue of
-#' `shapeindices::span_index()`. `D_ref/D`, in `(0, 1]`, where `D` is the
-#' mean distance between two random interior points and `D_ref` is the
-#' same quantity for the reference shape (a circle, unweighted; a
-#' concentric annulus, weighted) - both provable minimisers of `D`.
-#' Distinct from `gm_moment_of_inertia_index()`, which a squared-distance
-#' version of this index would just collapse to.
+#' Span index for a terra raster
+#'
+#' The raster analogue of `shapeindices::span_index()`. `D_ref/D`, in
+#' `(0, 1]`, where `D` is the mean distance between two random interior
+#' points and `D_ref` is the same quantity for the reference shape (a
+#' circle, unweighted; a concentric annulus, weighted) - both provable
+#' minimisers of `D`. Distinct from `gm_moment_of_inertia_index()`, which
+#' a squared-distance version of this index would just collapse to.
 #' @inheritParams gm_depth_index
 #' @param size number of points to sample (paired up consecutively into
 #'   `size %/% 2` point pairs) - matches `terra::spatSample()`'s own

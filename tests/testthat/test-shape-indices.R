@@ -5,8 +5,12 @@ make_square_mask <- function(n = 41, inset = 10) {
     r
 }
 
-test_that("gm_shape_indices(which = \"all\") returns all thirteen, matching direct calls exactly", {
+test_that("gm_shape_indices(which = \"all\") returns all fifteen, matching direct calls exactly", {
     r <- make_square_mask()
+    # size= only reaches the three ORIGINAL Monte Carlo indices - the two
+    # geodesic ones use their own n_points= instead (deliberately
+    # decoupled, see R/geodesic-index.R's own file header) and fall back
+    # to their own default here, matched below via n_points not size
     res <- gm_shape_indices(r, size = 2000, seed = 1)
 
     expect_equal(names(res), .ALL_GM_INDICES)
@@ -23,6 +27,25 @@ test_that("gm_shape_indices(which = \"all\") returns all thirteen, matching dire
     expect_equal(unname(res["reock"]), gm_reock_index(r)$index)
     expect_equal(unname(res["detour"]), gm_detour_index(r)$index)
     expect_equal(unname(res["exchange"]), gm_exchange_index(r)$index)
+    expect_equal(unname(res["geodesic_span"]), gm_geodesic_span_index(r, seed = 1)$index)
+    expect_equal(unname(res["geodesic_chord"]), gm_geodesic_chord_index(r, seed = 1)$index)
+})
+
+test_that("which = \"all\" includes the two geodesic indices, matching direct calls with n_points=", {
+    r <- make_square_mask()
+    res <- gm_shape_indices(r, n_points = 30, seed = 1)
+    expect_true(all(c("geodesic_span", "geodesic_chord") %in% names(res)))
+    expect_equal(length(res), 15L)
+    expect_equal(unname(res["geodesic_span"]), gm_geodesic_span_index(r, n_points = 30, seed = 1)$index)
+    expect_equal(unname(res["geodesic_chord"]), gm_geodesic_chord_index(r, n_points = 30, seed = 1)$index)
+})
+
+test_that("the geodesic indices are reachable via an explicit which= request too, matching direct calls", {
+    r <- make_square_mask()
+    res <- gm_shape_indices(r, which = c("hull_ratio", "geodesic_span", "geodesic_chord"), n_points = 30, seed = 1)
+    expect_equal(names(res), c("hull_ratio", "geodesic_span", "geodesic_chord"))
+    expect_equal(unname(res["geodesic_span"]), gm_geodesic_span_index(r, n_points = 30, seed = 1)$index)
+    expect_equal(unname(res["geodesic_chord"]), gm_geodesic_chord_index(r, n_points = 30, seed = 1)$index)
 })
 
 test_that("a subset via which= returns exactly (and only) those, in canonical order regardless of request order", {
@@ -132,6 +155,9 @@ test_that("every index is translation-invariant: a shape touching the raster's o
     terra::values(r_margin) <- 0
     r_margin[11:31, 11:31] <- 1  # same square, centred with a margin on every side
 
+    # "all" now includes the geodesic pair too (their own default
+    # n_points, since size= doesn't reach them - see R/geodesic-index.R's
+    # own file header for why) - one call already covers all fifteen
     res_edge <- gm_shape_indices(r_edge, size = 2000, seed = 1)
     res_margin <- gm_shape_indices(r_margin, size = 2000, seed = 1)
     expect_equal(res_edge, res_margin, tolerance = 1e-8)

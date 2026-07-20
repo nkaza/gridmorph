@@ -2,13 +2,7 @@
 % Please edit documentation in R/span-index.R
 \name{gm_span_index}
 \alias{gm_span_index}
-\title{Span index for a terra raster - the raster analogue of
-\code{shapeindices::span_index()}. \code{D_ref/D}, in \verb{(0, 1]}, where \code{D} is the
-mean distance between two random interior points and \code{D_ref} is the
-same quantity for the reference shape (a circle, unweighted; a
-concentric annulus, weighted) - both provable minimisers of \code{D}.
-Distinct from \code{gm_moment_of_inertia_index()}, which a squared-distance
-version of this index would just collapse to.}
+\title{Span index for a terra raster}
 \usage{
 gm_span_index(rast, weighted = TRUE, size = 3000, seed = NULL, n_bins = 100)
 }
@@ -49,13 +43,12 @@ quadratic in ring count, not linear).}
 \code{list(index, D, D_ref, area, n_valid_cells)}
 }
 \description{
-Span index for a terra raster - the raster analogue of
-\code{shapeindices::span_index()}. \code{D_ref/D}, in \verb{(0, 1]}, where \code{D} is the
-mean distance between two random interior points and \code{D_ref} is the
-same quantity for the reference shape (a circle, unweighted; a
-concentric annulus, weighted) - both provable minimisers of \code{D}.
-Distinct from \code{gm_moment_of_inertia_index()}, which a squared-distance
-version of this index would just collapse to.
+The raster analogue of \code{shapeindices::span_index()}. \code{D_ref/D}, in
+\verb{(0, 1]}, where \code{D} is the mean distance between two random interior
+points and \code{D_ref} is the same quantity for the reference shape (a
+circle, unweighted; a concentric annulus, weighted) - both provable
+minimisers of \code{D}. Distinct from \code{gm_moment_of_inertia_index()}, which
+a squared-distance version of this index would just collapse to.
 }
 \examples{
 r <- terra::rast(nrows = 40, ncols = 40, xmin = 0, xmax = 40, ymin = 0, ymax = 40, crs = "local")

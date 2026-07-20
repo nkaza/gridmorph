@@ -2,8 +2,7 @@
 % Please edit documentation in R/morphology.R
 \name{se_disc}
 \alias{se_disc}
-\title{Disc (Euclidean ball) structuring element: cell \verb{(dx, dy)} relative to
-centre is included iff \code{dx^2 + dy^2 <= radius^2}.}
+\title{Disc (Euclidean ball) structuring element}
 \usage{
 se_disc(radius)
 }
@@ -16,6 +15,6 @@ outside it (matching \code{terra::focal()}'s own convention for a
 non-rectangular footprint)
 }
 \description{
-Disc (Euclidean ball) structuring element: cell \verb{(dx, dy)} relative to
-centre is included iff \code{dx^2 + dy^2 <= radius^2}.
+Cell \verb{(dx, dy)} relative to centre is included iff
+\code{dx^2 + dy^2 <= radius^2}.
 }

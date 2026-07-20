@@ -2,13 +2,7 @@
 % Please edit documentation in R/radial-concentration-index.R
 \name{gm_radial_concentration_index}
 \alias{gm_radial_concentration_index}
-\title{Radial concentration index for a terra raster - the raster analogue of
-\code{shapeindices::radial_concentration_index()}. \code{D1_ref/D1}, in
-\verb{(0, 1]}, where \code{D1} is the mean distance from random interior points
-to the shape's own geometric median (the point minimising that mean
-distance - not the centroid) and \code{D1_ref} is the same quantity for the
-reference shape (a circle, unweighted; a concentric annulus, weighted) -
-both provable minimisers of \code{D1}.}
+\title{Radial concentration index for a terra raster}
 \usage{
 gm_radial_concentration_index(
   rast,
@@ -61,13 +55,12 @@ anywhere along the minimising segment, including inside a hole or the
 gap between multi-part pieces; the index value itself is unaffected.
 }
 \description{
-Radial concentration index for a terra raster - the raster analogue of
-\code{shapeindices::radial_concentration_index()}. \code{D1_ref/D1}, in
-\verb{(0, 1]}, where \code{D1} is the mean distance from random interior points
-to the shape's own geometric median (the point minimising that mean
-distance - not the centroid) and \code{D1_ref} is the same quantity for the
-reference shape (a circle, unweighted; a concentric annulus, weighted) -
-both provable minimisers of \code{D1}.
+The raster analogue of \code{shapeindices::radial_concentration_index()}.
+\code{D1_ref/D1}, in \verb{(0, 1]}, where \code{D1} is the mean distance from random
+interior points to the shape's own geometric median (the point
+minimising that mean distance - not the centroid) and \code{D1_ref} is the
+same quantity for the reference shape (a circle, unweighted; a
+concentric annulus, weighted) - both provable minimisers of \code{D1}.
 }
 \examples{
 r <- terra::rast(nrows = 40, ncols = 40, xmin = 0, xmax = 40, ymin = 0, ymax = 40, crs = "local")

@@ -2,13 +2,7 @@
 % Please edit documentation in R/morphology.R
 \name{erode}
 \alias{erode}
-\title{Morphological erosion of a terra SpatRaster - for binary (0/1) or
-continuous input, the local minimum over \code{kernel}'s footprint at every
-cell (grayscale erosion, a strict generalization of binary erosion, not
-a different operation); for a categorical (\code{terra::is.factor()}) input,
-standard label-image erosion - a cell keeps its own label only if its
-entire neighbourhood shares it, otherwise it becomes \code{NA} (see this
-file's own header for the full reasoning behind both).}
+\title{Morphological erosion of a terra SpatRaster}
 \usage{
 erode(mask, kernel = se_box(1))
 }
@@ -25,13 +19,13 @@ SpatRaster, same grid as \code{mask} and the same value type
 (binary/continuous/categorical) as \code{mask} itself
 }
 \description{
-Morphological erosion of a terra SpatRaster - for binary (0/1) or
-continuous input, the local minimum over \code{kernel}'s footprint at every
-cell (grayscale erosion, a strict generalization of binary erosion, not
-a different operation); for a categorical (\code{terra::is.factor()}) input,
-standard label-image erosion - a cell keeps its own label only if its
-entire neighbourhood shares it, otherwise it becomes \code{NA} (see this
-file's own header for the full reasoning behind both).
+For binary (0/1) or continuous input, the local minimum over \code{kernel}'s
+footprint at every cell (grayscale erosion, a strict generalization of
+binary erosion, not a different operation); for a categorical
+(\code{terra::is.factor()}) input, standard label-image erosion - a cell
+keeps its own label only if its entire neighbourhood shares it,
+otherwise it becomes \code{NA} (see this file's own header for the full
+reasoning behind both).
 }
 \examples{
 r <- terra::rast(nrows = 20, ncols = 20, xmin = 0, xmax = 20, ymin = 0, ymax = 20, crs = "local")
