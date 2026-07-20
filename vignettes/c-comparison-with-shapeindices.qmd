@@ -94,7 +94,7 @@ convergence <- do.call(rbind, lapply(c(25, 50, 100, 200), function(n) {
                            size = 3000, seed = 1)
   data.frame(n_cells_per_side = n, n_valid_cells = n_valid, t(res))
 }))
-knitr::kable(convergence, digits = 4, row.names = FALSE)
+knitr::kable(format = "html", convergence, digits = 4, row.names = FALSE)
 ```
 
 `hull_ratio` and `moment_of_inertia` converge quickly - by 100 cells per
@@ -141,7 +141,7 @@ gm_w <- gm_shape_indices(r_bir74, which = c("moment_of_inertia", "convexity", "h
                           weighted = TRUE, size = 1500, seed = 1)
 
 comparison <- rbind(vector = unlist(vec_w), raster = gm_w[c("moment_of_inertia", "convexity", "hull_ratio")])
-knitr::kable(comparison, digits = 4)
+knitr::kable(format = "html", comparison, digits = 4)
 ```
 
 A close match across all three, including `hull_ratio` - unsurprising,

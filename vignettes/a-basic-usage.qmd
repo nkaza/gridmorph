@@ -250,7 +250,7 @@ one call and returns a named vector:
 
 ```{r indices-combined}
 all_results <- sapply(shapes, gm_shape_indices, size = 2000, seed = 1)
-knitr::kable(round(all_results, 3))
+knitr::kable(format = "html", round(all_results, 3))
 ```
 
 A few things worth noticing in that table. **Pinwheel vs. dumbbell** is
@@ -374,7 +374,7 @@ scaling <- do.call(rbind, lapply(c(2, 5, 10, 20, 40, 80), function(np) {
              `shapeindices (Monte Carlo)` = round(t_vec[["elapsed"]], 2),
              check.names = FALSE)
 }))
-knitr::kable(scaling, caption = "Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices indices, same shapes, increasing patch count at roughly fixed total area.")
+knitr::kable(format = "html", scaling, caption = "Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices indices, same shapes, increasing patch count at roughly fixed total area.")
 ```
 
 At fixed total area, `gridmorph`'s own cost stays essentially flat as
@@ -398,7 +398,7 @@ deterministic <- do.call(rbind, lapply(c(2, 10, 40), function(np) {
   t <- system.time(shape_indices(poly, which = "convexity", deterministic = TRUE))
   data.frame(patches = np, n_triangles = n_tri, seconds = round(t[["elapsed"]], 2))
 }))
-knitr::kable(deterministic, caption = "shapeindices' own deterministic (exhaustive) convexity_index() mode, same patchy shapes.")
+knitr::kable(format = "html", deterministic, caption = "shapeindices' own deterministic (exhaustive) convexity_index() mode, same patchy shapes.")
 ```
 
 That growth looks mild here because these patches are simple, well-

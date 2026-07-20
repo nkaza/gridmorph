@@ -1,0 +1,8 @@
+// Bootstrap 5's own .table class hard-codes width: 100%, stretching every
+// knitr::kable() table to the full article width regardless of how little
+// content it actually holds. Size tables to their own content instead,
+// capped so they never overflow the article column.
+.table {
+  width: auto;
+  max-width: 100%;
+}
