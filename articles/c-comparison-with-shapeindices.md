@@ -1,17 +1,18 @@
 # 3. Comparison with shapeindices
 
-`gridmorph` and `shapeindices` compute the *same thirteen indices*,
-defined identically, on two different representations of a shape - a
-raster (`gridmorph`) versus an `sf` (multi)polygon triangulated via
-constrained Delaunay triangulation (`shapeindices`). Neither
-representation is “more correct” - which one you already have usually
-decides which package to reach for. This vignette is about what changes
-when you pick one over the other: accuracy (how close a raster’s index
-gets to the vector’s own answer, and what governs that), computational
-cost (time, and the algorithmic complexity behind it), and memory. It
-uses North Carolina’s 100 counties (shipped with the `sf` package)
-throughout, rasterizing the same polygons `shapeindices` operates on
-directly.
+`gridmorph` and `shapeindices` compute the *same indices*, defined
+identically, on two different representations of a shape - a raster
+(`gridmorph`) versus an `sf` (multi)polygon triangulated via constrained
+Delaunay triangulation (`shapeindices`). Neither representation is “more
+correct” - which one you already have usually decides which package to
+reach for. This vignette is about what changes when you pick one over
+the other: accuracy (how close a raster’s index gets to the vector’s own
+answer, and what governs that), computational cost (time, and the
+algorithmic complexity behind it), and memory. It uses North Carolina’s
+100 counties (shipped with the `sf` package) throughout, rasterizing the
+same polygons `shapeindices` operates on directly.
+
+Code
 
 ``` r
 
@@ -42,10 +43,8 @@ barrier islands) for the scaling story.
 ## 1 Accuracy: does the raster converge to the vector’s answer?
 
 `shapeindices` triangulates the polygon directly, so its own
-`deterministic = TRUE` answer is as exact as floating-point CDT
-triangulation and (for the Monte Carlo indices) a large sample get: a
-genuine, essentially-exact reference value, not an approximation to
-compare against.
+`deterministic = TRUE` answer is as reliable as floating-point CDT
+triangulation and (for the Monte Carlo indices) a large sample get
 
 ``` r
 
@@ -64,6 +63,9 @@ on each:
 
 ``` r
 
+#|code-fold: TRUE
+
+
 rasterize_at <- function(vect_poly, n) {
   bb <- ext(vect_poly)
   cellsize <- max(bb$xmax - bb$xmin, bb$ymax - bb$ymin) / n
@@ -78,15 +80,17 @@ convergence <- do.call(rbind, lapply(c(25, 50, 100, 200), function(n) {
                            size = 3000, seed = 1)
   data.frame(n_cells_per_side = n, n_valid_cells = n_valid, t(res))
 }))
-knitr::kable(format = "html", convergence, digits = 4, row.names = FALSE)
+knitr::kable(format = "html", t(convergence), digits = 3, row.names = TRUE)
 ```
 
-| n_cells_per_side | n_valid_cells | depth | moment_of_inertia | hull_ratio | polsby_popper |
-|---:|---:|---:|---:|---:|---:|
-| 25 | 260 | 0.7634 | 0.8065 | 0.8024 | 0.6118 |
-| 50 | 1046 | 0.7283 | 0.8144 | 0.8268 | 0.5793 |
-| 100 | 4193 | 0.7017 | 0.8149 | 0.8246 | 0.5525 |
-| 200 | 16834 | 0.6955 | 0.8157 | 0.8276 | 0.5468 |
+|                   |         |          |          |           |
+|:------------------|--------:|---------:|---------:|----------:|
+| n_cells_per_side  |  25.000 |   50.000 |  100.000 |   200.000 |
+| n_valid_cells     | 260.000 | 1046.000 | 4193.000 | 16834.000 |
+| depth             |   0.763 |    0.728 |    0.702 |     0.696 |
+| moment_of_inertia |   0.806 |    0.814 |    0.815 |     0.816 |
+| hull_ratio        |   0.802 |    0.827 |    0.825 |     0.828 |
+| polsby_popper     |   0.612 |    0.579 |    0.552 |     0.547 |
 
 `hull_ratio` and `moment_of_inertia` converge quickly - by 100 cells per
 side they’re within a percent or two of the vector’s exact value, since
@@ -135,20 +139,19 @@ gm_w <- gm_shape_indices(r_bir74, which = c("moment_of_inertia", "convexity", "h
                           weighted = TRUE, size = 1500, seed = 1)
 
 comparison <- rbind(vector = unlist(vec_w), raster = gm_w[c("moment_of_inertia", "convexity", "hull_ratio")])
-knitr::kable(format = "html", comparison, digits = 4)
+knitr::kable(format = "html", t(comparison), digits = 3)
 ```
 
-|        | moment_of_inertia_index | convexity_index | hull_ratio_index |
-|:-------|------------------------:|----------------:|-----------------:|
-| vector |                  0.6971 |          0.9896 |           0.8306 |
-| raster |                  0.6916 |          0.9896 |           0.8276 |
+|                         | vector | raster |
+|:------------------------|-------:|-------:|
+| moment_of_inertia_index |  0.697 |  0.692 |
+| convexity_index         |  0.990 |  0.990 |
+| hull_ratio_index        |  0.831 |  0.828 |
 
-A close match across all three, including `hull_ratio` - unsurprising,
-since none of the six classic metrics have a weighted form at all (see
-[`vignette("a-basic-usage")`](https://nkaza.github.io/gridmorph/articles/a-basic-usage.md)),
-so this is really the SAME unweighted comparison as above, just
-confirming that weighting `convexity`/ `moment_of_inertia` doesn’t
-disturb the underlying geometric accuracy.
+A close match across all three. Note that hull ratio is the same for
+weighted and unweigthed case (earlier). But the table also confirms that
+both raster and vector based indices agree even when different geometric
+models are used for `convexity` and `moment_of_inertia`.
 
 ## 2 Computational cost
 
@@ -188,25 +191,30 @@ cells-per-side raster from above):
 
 ``` r
 
+#|code-fold: TRUE
+
 r_200 <- rasterize_at(subset_vect, 200)
 
 t_vector <- system.time(vec_all <- shape_indices(subset_union))
-t_raster <- system.time(gm_all  <- gm_shape_indices(r_200, size = 1500, seed = 1))
+t_raster <- system.time(gm_all  <- gm_shape_indices(r_200, size = 200, seed = 1))
 
 data.frame(package = c("shapeindices (vector)", "gridmorph (raster)"),
            elapsed_seconds = c(t_vector[["elapsed"]], t_raster[["elapsed"]]))
 ```
 
                     package elapsed_seconds
-    1 shapeindices (vector)           0.740
-    2    gridmorph (raster)          49.862
+    1 shapeindices (vector)           0.726
+    2    gridmorph (raster)          10.070
 
-Both are fast at this scale - a handful of counties is a small problem
-either way. The difference shows up on a genuinely large, complex shape:
-all 100 NC counties combined into one, with real holes and real
-multi-part dispersal (barrier islands). `shapeindices`’ own
-deterministic mode warns explicitly once a mesh gets large -
-triangulating the full NC union already produces 281 triangles, and just
+Both are relatively fast at this scale. The `gridmorph` time is largely
+driven by the `geodesic` indices, which are not (yet) in the
+`shapeindices`.
+
+More differences shows up on a genuinely large, complex shape: all 100
+NC counties combined into one, with real holes and real multi-part
+dispersal (barrier islands). `shapeindices`’ own deterministic mode
+warns explicitly once a mesh gets large - triangulating the full NC
+union already produces 281 triangles, and just
 [`convexity_index()`](https://nkaza.github.io/shapeindices/reference/convexity_index.html)
 alone (one of thirteen indices, deterministic mode) takes on the order
 of **19 seconds**. `gridmorph`, on a raster covering the same shape at a
@@ -223,16 +231,16 @@ as.numeric(global(r_nc == 1, "sum", na.rm = TRUE))  # valid cell count
 ``` r
 
 t_full <- system.time(gm_full <- gm_shape_indices(r_nc, size = 500, seed = 1))
-t_full[["elapsed"]]  # ALL THIRTEEN indices, not just one
+t_full[["elapsed"]] 
 ```
 
-    [1] 1.85
+    [1] 1.75
 
-All thirteen indices, in roughly a second - not because `gridmorph`’s
-own math is cheaper per-unit, but because it never had an `O(n^2)` mode
-to fall into in the first place: every index here is `O(N)` or Monte
-Carlo `O(size)`, both of which scale predictably as the shape gets more
-complex. `shapeindices` has its own escape valve for this
+All indices, in roughly a second - not because `gridmorph`’s own math is
+cheaper per-unit, but because it never had an `O(n^2)` mode to fall into
+in the first place: every index here is `O(N)` or Monte Carlo `O(size)`,
+both of which scale predictably as the shape gets more complex.
+`shapeindices` has its own escape valve for this
 (`deterministic = FALSE`, or
 [`shape_indices()`](https://nkaza.github.io/shapeindices/reference/shape_indices.html)’s
 own `deterministic_max_tri` argument to switch automatically) - the
@@ -240,20 +248,22 @@ point isn’t that one package is “faster,” it’s that `gridmorph`’s cost
 model doesn’t have a quadratic cliff to fall off in the first place,
 because raster cell counts make that mode a non-starter from the start.
 
+Furthermore, for this particular dataset `geodesic` indices return `NA`
+due to disconnected patches. This check is quick and is done prior to
+computation and thus paradoxically all NC dataset takes shorter time
+than just the 4 county dataset with smaller `size`
+
 ## 3 Summary
 
 Neither package is a strict upgrade over the other - they answer the
 same question about two different kinds of input. If your data already
 lives as `sf` polygons and isn’t so complex that the mesh gets huge,
 `shapeindices`’ exact triangulation is the more precise answer, often at
-comparable or better speed for realistically-sized shapes. If your data
-is already a raster, or is complex/large enough that exact vector
-triangulation gets slow or memory-hungry, `gridmorph` trades a
+comparable or better speed for realistically-sized shapes.
+
+If your data is already a raster, or is complex/large enough that exact
+vector triangulation gets slow or memory-hungry, `gridmorph` trades a
 controllable, resolution-dependent approximation for cost that scales
 predictably - `O(N)` or Monte Carlo throughout, with no quadratic mode
 to fall into and explicit, hard memory ceilings rather than silent
-blowups. The safest bridge between the two, when you need it, is exactly
-what this vignette did: rasterize at a resolution fine enough for the
-indices you actually care about (area-based ones tolerate coarse grids;
-perimeter-based ones need much finer ones), and treat the vector answer
-as ground truth to validate against.
+blowups. Pick one that works for your usecase.

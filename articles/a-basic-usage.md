@@ -1,46 +1,48 @@
 # 1. Basic Usage
 
-``` r
+This vignette is a practical, code-first tour of the shape indices in
+`gridmorph`, a package that provides them for rasters. The indices are
+conceptually same as the ones in `shapeindices` (which works on `sf`
+(multi)polygons). For reference, here is a recap of the indices
 
-library(gridmorph)
-library(terra)
-```
+- *convexity*: exterior proportion of lines that connect interior points
+- *moment of inertia*: distribution of shape relative to its center of
+  gravity
+- *isotropy*: preference of shape to an axis
+- *directional balance*: preference of shape to a direction
+- *span*: average interior point distance within the shape
+- *radial concentration*: concentration relative to center in the shape
+- *depth*: average distance of interior of the shape to the edge
+- *hull ratio*: proportion of the shape to its convex hull
+- *polsby popper*: relative area to perimeter of the shape
+- *width length ratio*: ratio of the sides of the rotated bounding box
+  of the shape
+- *reock*: proportion of the shape area to the minimum bounding circle
+- *detour*: ratio of the perimeters of the shape’s equal area circle and
+  its convex hull
+- *exchange*: proportion of the shape area covered by the equal area
+  circle centered on the shape.
 
-This vignette is a practical, code-first tour of the fifteen shape
-indices: build a few synthetic raster shapes, run the indices on them
-individually and all at once, and see what `weighted` changes.
-`gridmorph` computes the same thirteen indices as its sibling package
-`shapeindices` (which works on `sf` (multi)polygons instead of
-rasters) - the underlying definitions and proofs are the same regardless
-of representation, so they aren’t repeated here - plus two indices with
-no vector-package analogue at all
-([`gm_geodesic_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_span_index.md)
-and
-[`gm_geodesic_chord_index()`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_chord_index.md),
-mean distance along the shortest path CONFINED to the shape rather than
-a straight line - see the “Geodesic indices” section below). For the
-mathematical grounding - what “convexity” or “depth” even means, and
-where each index breaks down - see `shapeindices`’ own
-[`vignette("b-understanding-convexity-index", package = "shapeindices")`](https://nkaza.github.io/shapeindices/articles/b-understanding-convexity-index.html)
-and its companions. For the six morphological operators
-([`erode()`](https://nkaza.github.io/gridmorph/reference/erode.md),
-[`dilate()`](https://nkaza.github.io/gridmorph/reference/dilate.md),
+In addition to these, rasters automatically admit a couple more with
+little difficulty and are thus included. They are ratios of shape
+constrained shortest path distance to euclidean distance. The domain
+(choice of points) determine the index
+
+- *geodesic span*: interior points
+- *geodesic chord*: perimeter points
+
+For the mathematical grounding and where each index breaks down, see
+[vignettes in `shapeindices`](https://nkaza.github.io/shapeindices)
+
+In addition, the package also provides six conventional morphological
+``` erode()``dilate() ```,
 [`opening()`](https://nkaza.github.io/gridmorph/reference/opening.md),
 [`closing()`](https://nkaza.github.io/gridmorph/reference/closing.md),
 [`tophat()`](https://nkaza.github.io/gridmorph/reference/tophat.md),
-[`bottomhat()`](https://nkaza.github.io/gridmorph/reference/bottomhat.md))
-and how they behave across binary, continuous, and categorical rasters,
-see
-[`vignette("b-morphological-operators")`](https://nkaza.github.io/gridmorph/articles/b-morphological-operators.md).
-For how `gridmorph` and `shapeindices` compare on accuracy, speed, and
-memory, see
-[`vignette("c-comparison-with-shapeindices")`](https://nkaza.github.io/gridmorph/articles/c-comparison-with-shapeindices.md).
-Six of the fifteen indices compare the shape against a reference value
-computed the same way the shape’s own score was, rather than a plain
-textbook formula - see
-[`vignette("d-resolution-matched-references")`](https://nkaza.github.io/gridmorph/articles/d-resolution-matched-references.md)
-for why, and what a perfectly rasterized disk scores on each as a
-result.
+[`bottomhat()`](https://nkaza.github.io/gridmorph/reference/bottomhat.md).
+However, unlike image processing literature, these operators provided
+here are sensitive to the raster type (e.g. binary, continuous and
+categorical)
 
 ## 1 Six canonical shapes
 
@@ -50,14 +52,14 @@ index treats as optimal), a **pinwheel** (four spiky, rotationally
 symmetric blades), a **dumbbell** (two round masses joined by a thin
 bar), a **ring** (a disk with its centre hollowed out), an **L-shape**
 (a simple right-angle notch), and a **patchy** raster (several disjoint
-patches grown independently, never touching each other - a genuine
-multi-part shape, the raster analogue of an `sf` MULTIPOLYGON). The
-first five are single, connected pieces; `patchy` is not, and shows up
-again in its own section below.
+patches). The first five are single, connected pieces; `patchy` is not.
 
 Code
 
 ``` r
+
+library(gridmorph)
+library(terra)
 
 make_disk <- function(n = 81, radius = 30) {
   r <- rast(nrows = n, ncols = n, xmin = 0, xmax = n, ymin = 0, ymax = n, crs = "local")
@@ -213,43 +215,14 @@ plot(shapes_stack, col = c("white", "steelblue"), legend = FALSE, axes = FALSE, 
 
 ## 2 The fifteen indices
 
-Each index has its own function -
-[`gm_depth_index()`](https://nkaza.github.io/gridmorph/reference/gm_depth_index.md),
-[`gm_moment_of_inertia_index()`](https://nkaza.github.io/gridmorph/reference/gm_moment_of_inertia_index.md),
-[`gm_moment_isotropy_index()`](https://nkaza.github.io/gridmorph/reference/gm_moment_isotropy_index.md),
-[`gm_directional_balance_index()`](https://nkaza.github.io/gridmorph/reference/gm_directional_balance_index.md),
-[`gm_convexity_index()`](https://nkaza.github.io/gridmorph/reference/gm_convexity_index.md),
-[`gm_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_span_index.md),
-[`gm_radial_concentration_index()`](https://nkaza.github.io/gridmorph/reference/gm_radial_concentration_index.md)
-(Monte Carlo, drawn from the raster’s own valid cells), plus
-[`gm_hull_ratio_index()`](https://nkaza.github.io/gridmorph/reference/gm_hull_ratio_index.md),
-[`gm_polsby_popper_index()`](https://nkaza.github.io/gridmorph/reference/gm_polsby_popper_index.md),
-[`gm_width_length_ratio_index()`](https://nkaza.github.io/gridmorph/reference/gm_width_length_ratio_index.md),
-[`gm_reock_index()`](https://nkaza.github.io/gridmorph/reference/gm_reock_index.md),
-[`gm_detour_index()`](https://nkaza.github.io/gridmorph/reference/gm_detour_index.md),
-and
-[`gm_exchange_index()`](https://nkaza.github.io/gridmorph/reference/gm_exchange_index.md)
-(classic redistricting-literature metrics: each needs only the shape’s
-own footprint, convex hull, or minimum bounding circle) - the same
-thirteen `shapeindices` computes on a polygon. Two more have no
-vector-package equivalent at all:
-[`gm_geodesic_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_span_index.md)
-and
-[`gm_geodesic_chord_index()`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_chord_index.md)
-measure mean distance along the shortest path CONFINED to the shape
-([`terra::gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)),
-between two random interior points or two random boundary points
-respectively, rather than a straight line - the raster analogue of the
-“Traversal Index” (Angel, Parent & Civco, 2010). They take the same
-`size`/`seed` as the three Monte Carlo indices above, but cost far more
-per unit of `size` (see
-[`?gm_geodesic_span_index`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_span_index.md)
-for why), and, like the six classic metrics,
-[`gm_geodesic_chord_index()`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_chord_index.md)
-has no `weighted` form. Every index takes the raster directly - no
-separate mask argument - and returns a list with `index` plus supporting
-detail (area, centroid, reference geometry for plotting, and so on).
-Called directly on a shape:
+Each index has its own function. Naming convention follows
+`gm_*_index()`
+(e.g. [`gm_moment_isotropy_index()`](https://nkaza.github.io/gridmorph/reference/gm_moment_isotropy_index.md)).
+Every index takes the raster directly and returns a list with `index`
+plus supporting detail (area, centroid, reference geometry for plotting,
+and so on). `size` (number of random cells drawn) and `seed` (for
+reproducibility) are key inputs for the random draws. Called directly on
+a binary raster, they provide unweighted index:
 
 ``` r
 
@@ -286,15 +259,14 @@ gm_geodesic_span_index(shapes$dumbbell, size = 60, seed = 1)$index
 
     [1] 0.6632309
 
-Running all fifteen separately means writing fifteen calls.
 [`gm_shape_indices()`](https://nkaza.github.io/gridmorph/reference/gm_shape_indices.md)
 runs all of them (or a chosen subset via `which`) in one call and
 returns a named vector. `size` here has to serve all five Monte Carlo
 indices at once, including the two much more expensive geodesic ones
 (see
 [`?gm_shape_indices`](https://nkaza.github.io/gridmorph/reference/gm_shape_indices.md)),
-so it’s kept modest rather than reused from the `size = 2000` example
-above:
+so it is preferable to keep it modest if computational time is a
+constraint.
 
 ``` r
 
@@ -304,19 +276,19 @@ knitr::kable(format = "html", round(all_results, 3))
 
 |                      |  disk | pinwheel | dumbbell |  ring |     L | patchy |
 |:---------------------|------:|---------:|---------:|------:|------:|-------:|
-| depth                | 1.001 |    0.408 |    0.665 | 0.425 | 0.675 |  0.436 |
-| moment_of_inertia    | 1.000 |    0.527 |    0.411 | 0.523 | 0.689 |  0.251 |
-| moment_isotropy      | 1.000 |    1.000 |    0.093 | 1.000 | 0.400 |  0.213 |
-| directional_balance  | 1.000 |    0.999 |    0.999 | 1.000 | 0.926 |  0.993 |
-| convexity            | 1.000 |    0.794 |    0.897 | 0.594 | 0.941 |  0.584 |
-| span                 | 1.014 |    0.806 |    0.662 | 0.711 | 0.787 |  0.520 |
-| radial_concentration | 1.023 |    0.750 |    0.661 | 0.727 | 0.838 |  0.498 |
-| hull_ratio           | 0.968 |    0.478 |    0.710 | 0.666 | 0.803 |  0.399 |
-| polsby_popper        | 0.978 |    0.160 |    0.465 | 0.280 | 0.593 |  0.121 |
-| width_length_ratio   | 1.000 |    1.000 |    0.407 | 1.000 | 1.000 |  0.594 |
-| reock                | 0.996 |    0.345 |    0.354 | 0.687 | 0.447 |  0.205 |
-| detour               | 0.997 |    0.641 |    0.747 | 0.828 | 0.806 |  0.574 |
-| exchange             | 0.993 |    0.591 |    0.438 | 0.550 | 0.726 |  0.312 |
+| depth                | 1.001 |    0.408 |    0.665 | 0.425 | 0.675 |  0.442 |
+| moment_of_inertia    | 1.000 |    0.527 |    0.411 | 0.523 | 0.689 |  0.160 |
+| moment_isotropy      | 1.000 |    1.000 |    0.093 | 1.000 | 0.400 |  0.727 |
+| directional_balance  | 1.000 |    0.999 |    0.999 | 1.000 | 0.926 |  0.893 |
+| convexity            | 1.000 |    0.794 |    0.897 | 0.594 | 0.941 |  0.505 |
+| span                 | 1.014 |    0.806 |    0.662 | 0.711 | 0.787 |  0.406 |
+| radial_concentration | 1.023 |    0.750 |    0.661 | 0.727 | 0.838 |  0.409 |
+| hull_ratio           | 0.968 |    0.478 |    0.710 | 0.666 | 0.803 |  0.300 |
+| polsby_popper        | 0.978 |    0.160 |    0.465 | 0.280 | 0.593 |  0.136 |
+| width_length_ratio   | 1.000 |    1.000 |    0.407 | 1.000 | 1.000 |  0.775 |
+| reock                | 0.996 |    0.345 |    0.354 | 0.687 | 0.447 |  0.181 |
+| detour               | 0.997 |    0.641 |    0.747 | 0.828 | 0.806 |  0.487 |
+| exchange             | 0.993 |    0.591 |    0.438 | 0.550 | 0.726 |  0.028 |
 | geodesic_span        | 0.999 |    0.603 |    0.681 | 0.694 | 0.823 |     NA |
 | geodesic_chord       | 0.996 |    0.774 |    0.843 | 0.877 | 0.913 |     NA |
 
@@ -326,7 +298,7 @@ genuinely different things: the four-bladed pinwheel has exact 4-fold
 rotational symmetry, so its mass is distributed identically in every
 direction - `moment_isotropy` scores essentially 1 - but it’s deeply
 non-convex (four spiky, empty notches), so `convexity`, `hull_ratio`,
-and `reock` all score low. The dumbbell is the mirror image: elongated
+and `reock` all score low. The **dumbbell** is a mirror image: elongated
 along one axis, so `moment_isotropy` scores near 0, but a line between
 almost any two interior points stays inside the shape (the connecting
 bar keeps the two balls “in sight” of each other), so `convexity` stays
@@ -340,8 +312,7 @@ one notch, but only in one place, not spiky like the pinwheel.
 **`patchy`** scores sensibly on thirteen of the fifteen indices - lowest
 `hull_ratio` and `polsby_popper` of any shape here, exactly as you’d
 expect from several small, scattered pieces - but its `geodesic_span`
-and `geodesic_chord` entries are `NA`. The next section explains why,
-and what that does and doesn’t say about rasters and multi-part shapes.
+and `geodesic_chord` entries are `NA` (more on that below)
 
 [`gm_shape_indices()`](https://nkaza.github.io/gridmorph/reference/gm_shape_indices.md)
 also accepts a subset:
@@ -356,16 +327,12 @@ gm_shape_indices(shapes$dumbbell, which = c("hull_ratio", "reock", "detour"))
 
 ## 3 Multi-part shapes
 
-`make_patchy()` (defined above, alongside the other five shape
-generators) grows several patches independently from random seed cells
-across the raster, refusing to let any two patches touch - the raster
-equivalent of an `sf` MULTIPOLYGON with several disjoint parts, rather
-than one connected piece. A raster represents this with no special
+MultiPolygons are common place in vectors and an analogous situation are
+multipatch raters. However a raster represents this with no special
 machinery at all: every cell is independently inside or outside the
 shape, so nothing about the representation itself distinguishes “one
-piece” from “several disjoint pieces.”
-[`terra::patches()`](https://rspatial.github.io/terra/reference/patches.html)
-confirms `patchy` really is multi-part, not just concave:
+piece” from “several disjoint piece, unless we explicitly determine the
+connectivity graph.
 
 ``` r
 
@@ -373,13 +340,12 @@ p <- terra::patches(shapes$patchy, directions = 8, zeroAsNA = TRUE)
 terra::global(p, "max", na.rm = TRUE)[[1]]  # number of disjoint pieces
 ```
 
-    [1] 9
+    [1] 5
 
-That “no special machinery” claim holds for thirteen of the fifteen
-indices - already visible in the results table above, where `patchy` got
-an ordinary numeric score on every area/moment/hull/boundary-based
-index, computed exactly the same way as for the five single-piece
-shapes. It does NOT hold for `geodesic_span` and `geodesic_chord`:
+Due to this representational convenience, many of the indices
+automatically deal with multiple parts and holes treating them
+equivalently (exterior is always background). However, this idea does
+NOT hold for `geodesic_span` and `geodesic_chord`:
 
 ``` r
 
@@ -399,38 +365,24 @@ gm_geodesic_span_index(shapes$patchy, size = 60, seed = 1)$index
 
 Geodesic distance is a path between two points, confined to the shape -
 and there is no path between two points in different disjoint pieces,
-not just a long one. That’s not a computational shortfall to work
-around; it is what “disconnected” means. `NA` with an explicit warning
-is the correct answer, not a gap in this package’s own implementation -
-the warning fires from a cheap up-front connectivity check
-([`terra::patches()`](https://rspatial.github.io/terra/reference/patches.html)
-again, internally), not from wasting time sampling first and discovering
-the same fact afterward.
+not just a long one.
 
 It’s tempting to reach for a workaround that still produces a number.
-Two were checked directly, not just argued about, and both make things
-worse, not better:
+Two were checked directly and both make things worse, not better:
 
-- **Drop the unreachable point pairs and average over what’s left.**
-  Tested on shapes holding total area roughly fixed while patch count
-  increased: the resulting “index” climbed from 1.05 at one patch to
-  4.96 at 25 patches - a badly FRAGMENTED shape scoring nearly five
-  times MORE compact than a disk, because the reference disk stays sized
-  to the full combined area while the filtered distances shrink toward
-  whatever’s typical *within* an ever-smaller patch. The more fragmented
-  the shape, the more misleading the number.
-- **Score each patch separately and average the results.** Tested on
-  four identical small patches, once placed close together and once
-  scattered across the same raster: both arrangements scored identically
-  (1.001 either way), because per-patch averaging throws away everything
-  about how the patches relate to each other spatially - exactly the
-  information “treat the whole mask as one shape” exists to capture.
-  (This is a legitimate, different metric in its own right - it’s what
-  `landscapemetrics`’ class-level functions already compute, not
-  something gridmorph needs to duplicate.)
+- **Drop the unreachable point pairs and average over what’s left.** For
+  highly fragmented patch configuration, the reference disk stays the
+  same as combined area, but filtered distances shrink towards whatever
+  is typical *within* ever smaller patches and thus index grows beyond
+  1.
 
-`NA` isn’t a limitation to route around; it’s the honest answer for a
-quantity that genuinely has none, for these two indices only.
+- **Score each patch separately and average the results.** identical
+  patches close or far from one another will score the same. This is a
+  legitimate, different metric in its own right, but better left for
+  `landscapemetrics` and does not need to be duplicated here.
+
+Thus, these functions return `NA` for multipatch rasters for these two
+indices.
 
 ### 3.1 Computational cost: does the clean representation cost less?
 
@@ -459,12 +411,12 @@ knitr::kable(format = "html", scaling, caption = "Seconds for all fifteen gridmo
 
 | patches | gridmorph | shapeindices (Monte Carlo) |
 |--------:|----------:|---------------------------:|
-|       2 |      1.58 |                       1.73 |
-|       5 |      1.55 |                       2.45 |
-|      10 |      1.56 |                       3.27 |
-|      20 |      1.56 |                       3.88 |
-|      40 |      1.56 |                       5.83 |
-|      80 |      1.54 |                       7.88 |
+|       2 |      1.47 |                       1.74 |
+|       5 |      1.50 |                       2.51 |
+|      10 |      1.46 |                       3.31 |
+|      20 |      1.44 |                       3.90 |
+|      40 |      1.39 |                       6.09 |
+|      80 |      1.41 |                       8.44 |
 
 Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices
 indices, same shapes, increasing patch count at roughly fixed total
@@ -499,7 +451,7 @@ knitr::kable(format = "html", deterministic, caption = "shapeindices' own determ
 |--------:|------------:|--------:|
 |       2 |         264 |    0.80 |
 |      10 |         516 |    1.94 |
-|      40 |        1036 |    4.41 |
+|      40 |        1036 |    4.77 |
 
 shapeindices' own deterministic (exhaustive) convexity_index() mode,
 same patchy shapes. {.table .caption-top}
@@ -516,34 +468,24 @@ single deterministic
 [`convexity_index()`](https://nkaza.github.io/shapeindices/reference/convexity_index.html)
 call there takes on the order of 19 seconds at just 281 triangles, an
 order of magnitude worse than any patch count tested here at a
-comparable triangle count. Patch count by itself is a mild cost driver
+comparable triangle count. Multipolygons by itself is a mild cost driver
 for `shapeindices`; boundary complexity is what actually triggers the
 quadratic cliff, and messy real-world multi-part shapes tend to have
 both at once.
 
-So: the representation question and the cost question have different
-answers. Encoding a multi-part shape needs zero special-casing on a
-raster (thirteen of fifteen indices) and a structural, not incidental,
-limitation on the other two (geodesic distance has no value across
-disconnected pieces, by definition, not by implementation gap). Cost is
-a separate story - `gridmorph` stays flat with patch count because its
-cost model was never coupled to boundary complexity in the first place,
-while `shapeindices` grows because its mesh does, mildly for simple
-patches and severely for realistically complex ones. Cleaner encoding
-and lower cost aren’t the same claim, and only one of them holds
-unconditionally here.
-
 ## 4 `weighted`: using the raster’s own values as mass
 
-Every index function takes `weighted` (default `TRUE`). The shape itself
-is always derived the same way - a cell counts as “inside” iff its own
-value is neither `NA` nor exactly `0` - but `weighted` controls whether
-those *values* also act as a density/mass field throughout the
-computation, or are ignored beyond defining the shape. A plain binary
-mask (every inside cell equal to `1`) gives the identical answer either
-way, since there’s no variation in mass to matter. A genuinely
-continuous raster is where the difference shows up - here, a gradient
-increasing toward the dumbbell’s right-hand ball:
+For indices that admit weights, the weights are the values of the
+raster. For these indices `weigthed` defaults to `TRUE`, though can be
+reset by th user. The shape itself is always derived the same way - a
+cell counts as “inside” iff its own value is neither `NA` nor exactly
+`0`. but `weighted` controls whether those *values* also act as a
+density/mass field throughout the computation, or are ignored beyond
+defining the shape.
+
+A plain binary mask (every inside cell equal to `1`) gives the identical
+answer either way, since there’s no variation in mass to matter. A
+genuinely continuous raster is where the difference shows up, e.g.
 
 ``` r
 
@@ -567,12 +509,12 @@ data.frame(plain, ignored, weighted)
     1 0.4108922 0.4108922 0.3708851
 
 `plain` and `ignored` match exactly - `weighted = FALSE` on a continuous
-raster reproduces the plain binary-mask index precisely, not
-approximately, since it substitutes a constant mass over every valid
-cell regardless of the raster’s own values. `weighted` differs: with
-more mass concentrated toward the right ball, the shape’s own effective
-centroid shifts, changing the moment of inertia relative to the
-unweighted (geometric) case.
+raster reproduces the plain binary-mask index precisely since it
+substitutes a constant mass over every valid cell regardless of the
+raster’s own values. `weighted` differs: with more mass concentrated
+toward the right ball, the shape’s own effective centroid shifts,
+changing the moment of inertia relative to the unweighted (geometric)
+case.
 
 **One thing `weighted` does not change**: the six classic metrics
 (`hull_ratio`, `polsby_popper`, `width_length_ratio`, `reock`, `detour`,
@@ -613,30 +555,20 @@ Larger `size` reduces sampling noise at the cost of more computation - a
 few hundred is usually enough to see a shape’s rough compactness; a few
 thousand is closer to what you’d want for a final, reportable number.
 
-### 5.1 `gm_geodesic_span_index()`/`gm_geodesic_chord_index()`: same `size`, very different cost
-
-The two geodesic indices are Monte Carlo too, and take the same `size`
-argument, meaning the same thing statistically: `size = K` draws K
-points and each one’s own contribution is the exact mean of its own
+However, while the two geodesic indices are Monte Carlo too, and take
+the same `size` argument;`size = K` draws K points and each one’s own
+contribution is the exact mean of its own
 [`terra::gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)
 field, so precision scales with `size` the same way it does for the
-three indices above
-([`?gm_geodesic_span_index`](https://nkaza.github.io/gridmorph/reference/gm_geodesic_span_index.md)
-has the full reasoning, including why an earlier version of this package
-used a separate `n_points` argument here and no longer does).
-
-What `size` does NOT unify is COST: each point here is a whole-raster
+three indices above. What `size` does NOT unify is COST: each point here
+is a whole-raster
 [`gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)
 sweep, not a coordinate lookup, so it’s a substantially more expensive
 index than the three above at the same `size`. This matters concretely
 for
 [`gm_shape_indices()`](https://nkaza.github.io/gridmorph/reference/gm_shape_indices.md):
-a `size` picked for those three (a few hundred to a few thousand) can be
-far too slow, or exceed this index’s own much stricter memory/time
-ceiling, once it’s also reached through
-[`gm_shape_indices()`](https://nkaza.github.io/gridmorph/reference/gm_shape_indices.md)’s
-shared `...` - pick `size` with the most expensive requested index in
-mind, not just the cheapest.
+a `size` picked for should be picked for the most expensive requested
+index.
 
 ``` r
 
@@ -651,13 +583,6 @@ gm_geodesic_span_index(shapes$pinwheel, size = 150, seed = 1)$index
 ```
 
     [1] 0.6027439
-
-Even so, `D` and `D_ref` carry more Monte Carlo noise here than the
-closed-form-reference indices above do at a comparable `size`:
-[`gridDist()`](https://rspatial.github.io/terra/reference/gridDist.html)’s
-own angular quantization on a discrete grid adds variability on top of
-ordinary point-sampling noise, so getting a comparably precise answer
-needs a larger `size` than the three indices above would.
 
 ## 6 Morphological operators
 
@@ -749,10 +674,7 @@ continuous (grayscale) and categorical (label-image) rasters too, each
 in a genuinely different way, not just a relabelled version of the
 binary case. See
 [`vignette("b-morphological-operators")`](https://nkaza.github.io/gridmorph/articles/b-morphological-operators.md)
-for the full tour, including why
-[`tophat()`](https://nkaza.github.io/gridmorph/reference/tophat.md)/[`bottomhat()`](https://nkaza.github.io/gridmorph/reference/bottomhat.md)
-return a real-valued residual on continuous input but a boolean flag on
-categorical input.
+for the full tour.
 
 ## 7 A note on coordinate systems
 
@@ -770,10 +692,8 @@ line-crossing tests for
 pairwise distances for
 [`gm_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_span_index.md)/[`gm_radial_concentration_index()`](https://nkaza.github.io/gridmorph/reference/gm_radial_concentration_index.md),
 moment-tensor calculations, minimum-enclosing-circle fitting - works
-directly in `rast`’s own x/y coordinate space as if it were Cartesian,
-and isn’t yet geodesic-aware. All six shapes above used `crs = "local"`,
-a real (if arbitrary) projected CRS `terra` provides for exactly this
-kind of synthetic-grid use - real-world rasters need a genuine projected
-CRS (state plane, UTM, or similar) before calling any index here. See
-[`?gridmorph`](https://nkaza.github.io/gridmorph/reference/gridmorph-package.md)
-for the full policy, including what happens with no CRS set at all.
+directly in `rast`’s own coordinate space as if it were Cartesian, and
+isn’t (yet) geodesic-aware. All six shapes above used `crs = "local"`, a
+real (if arbitrary) projected CRS `terra` provides for exactly this kind
+of synthetic-grid use - real-world rasters need a genuine projected CRS
+(state plane, UTM, or similar) before calling any index here.

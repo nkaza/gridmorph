@@ -22,9 +22,7 @@ just a detail - two of the six operators
 ([`tophat()`](https://nkaza.github.io/gridmorph/reference/tophat.md),
 [`bottomhat()`](https://nkaza.github.io/gridmorph/reference/bottomhat.md))
 compute a genuinely different kind of result for categorical input than
-for the other two. For everything else in the package - the thirteen
-shape indices - see
-[`vignette("a-basic-usage")`](https://nkaza.github.io/gridmorph/articles/a-basic-usage.md).
+for the other two.
 
 ## 1 Structuring elements
 
@@ -59,24 +57,9 @@ se_disc(2)     # a Euclidean disc of radius 2
     [4,]   NA    1    1    1   NA
     [5,]   NA   NA    1   NA   NA
 
-``` r
-
-se_diamond(2)  # a Manhattan (L1) diamond of radius 2
-```
-
-         [,1] [,2] [,3] [,4] [,5]
-    [1,]   NA   NA    1   NA   NA
-    [2,]   NA    1    1    1   NA
-    [3,]    1    1    1    1    1
-    [4,]   NA    1    1    1   NA
-    [5,]   NA   NA    1   NA   NA
-
 Any hand-built matrix works too, as long as its non-`NA` entries are all
-exactly `1` -
-[`erode()`](https://nkaza.github.io/gridmorph/reference/erode.md)/[`dilate()`](https://nkaza.github.io/gridmorph/reference/dilate.md)
-reject anything else with a clear error rather than silently misbehaving
-([`terra::focal()`](https://rspatial.github.io/terra/reference/focal.html)
-treats other values as multiplicative weights, not a boolean mask).
+exactly `1`. The operators reject anything else with a clear error
+rather than silently misbehaving.
 
 ## 2 Binary masks
 
@@ -123,43 +106,63 @@ noisy <- disk
 flipped <- sample(ncell(noisy), 80)
 values(noisy)[flipped] <- 1 - values(noisy)[flipped]
 
-cleaned <- closing(opening(noisy, se_disc(1)), se_disc(1))
+cleaned1 <- closing(opening(noisy, se_disc(1)), se_disc(1))
+cleaned2 <- opening(closing(noisy, se_disc(1)), se_disc(1))
 
-par(mfrow = c(1, 2))
+par(mfrow = c(1, 3))
 plot(noisy, col = c("white", "steelblue"), legend = FALSE, axes = FALSE, main = "noisy (80 flipped cells)")
-plot(cleaned, col = c("white", "steelblue"), legend = FALSE, axes = FALSE, main = "opening then closing")
+plot(cleaned1, col = c("white", "steelblue"), legend = FALSE, axes = FALSE, main = "opening then closing")
+plot(cleaned2, col = c("white", "steelblue"), legend = FALSE, axes = FALSE, main = "closing then opening")
 ```
 
 ![](b-morphological-operators_files/figure-html/binary-denoise-1.png)
 
 ``` r
 
-cat("cells differing from the true disk - noisy:", sum(values(noisy) != values(disk)),
-    " cleaned:", sum(values(cleaned) != values(disk)), "\n")
+cat("cells differing from the true disk \n",
+     "noisy:", sum(values(noisy) != values(disk)), "\n",
+     "O-C:", sum(values(cleaned1) != values(disk)), "\n",
+     "C-O:", sum(values(cleaned2) != values(disk)))
 ```
 
-    cells differing from the true disk - noisy: 80  cleaned: 7 
+    cells differing from the true disk
+     noisy: 80
+     O-C: 7
+     C-O: 19
+
+Note however, that these operators are not commutative.
 
 [`tophat()`](https://nkaza.github.io/gridmorph/reference/tophat.md)
-(`mask AND NOT opening(mask)`) highlights exactly the small bright
-features
+(`k AND NOT opening(k)`) highlights exactly the small bright features
 [`opening()`](https://nkaza.github.io/gridmorph/reference/opening.md)
 removed;
 [`bottomhat()`](https://nkaza.github.io/gridmorph/reference/bottomhat.md)
-(`closing(mask) AND NOT mask`) highlights exactly the small dark gaps
+(`closing(k) AND NOT k`) highlights exactly the small dark gaps
 [`closing()`](https://nkaza.github.io/gridmorph/reference/closing.md)
 filled. Both return a `0`/`1` raster, same grid as the input.
 
+``` r
+
+h1 <- tophat(noisy, se_box(1))
+h2 <- bottomhat(noisy, se_box(1))
+
+par(mfrow = c(1, 3))
+plot(noisy, col = c("white", "steelblue"), legend = FALSE, axes = FALSE, main = "noisy (80 flipped cells)")
+plot(h1, col = c("white", "steelblue"), legend = FALSE, axes = FALSE, main = "Tophat")
+plot(h2, col = c("white", "steelblue"), legend = FALSE, axes = FALSE, main = "Bottomhat")
+```
+
+![](b-morphological-operators_files/figure-html/hat_demo-1.png)
+
 ## 3 Continuous rasters
 
-None of the six operators require a 0/1 mask.
+None of the six operators require a 0/1 binary raster
 [`erode()`](https://nkaza.github.io/gridmorph/reference/erode.md)/[`dilate()`](https://nkaza.github.io/gridmorph/reference/dilate.md)
 are
 [`focal()`](https://rspatial.github.io/terra/reference/focal.html)-based
 local-minimum/local-maximum filters with no binarization step, so on
-continuous input they compute ordinary *grayscale* morphology - a
-standard generalization of the binary case, not an approximation of it -
-and
+continuous input they compute ordinary *grayscale/continuous*
+morphology - a standard generalization of the binary case.
 [`opening()`](https://nkaza.github.io/gridmorph/reference/opening.md)/[`closing()`](https://nkaza.github.io/gridmorph/reference/closing.md)/[`tophat()`](https://nkaza.github.io/gridmorph/reference/tophat.md)/[`bottomhat()`](https://nkaza.github.io/gridmorph/reference/bottomhat.md)
 inherit that directly, since each is built from
 [`erode()`](https://nkaza.github.io/gridmorph/reference/erode.md)/[`dilate()`](https://nkaza.github.io/gridmorph/reference/dilate.md)
@@ -168,11 +171,7 @@ alone. On a smooth left-to-right gradient,
 visibly pulls the whole surface down toward the background outside the
 shape (a local *minimum* filter), and
 [`dilate()`](https://nkaza.github.io/gridmorph/reference/dilate.md)
-pulls it up (a local *maximum* filter) - all three panels below share
-the SAME `range`, since they’re the same underlying quantity at three
-processing stages: without that, each panel’s colour legend would
-auto-scale to its own min/max, and the same colour would silently mean
-different values in each one:
+pulls it up (a local *maximum* filter):
 
 ``` r
 
@@ -186,8 +185,8 @@ dilated <- dilate(gradient, se_disc(4))
 shared_range <- range(c(values(eroded), values(gradient), values(dilated)), na.rm = TRUE)
 
 par(mfrow = c(1, 3))
-plot(eroded, col = hcl.colors(50, "viridis"), range = shared_range, axes = FALSE, main = "erode(gradient, se_disc(4))")
 plot(gradient, col = hcl.colors(50, "viridis"), range = shared_range, axes = FALSE, main = "gradient")
+plot(eroded, col = hcl.colors(50, "viridis"), range = shared_range, axes = FALSE, main = "erode(gradient, se_disc(4))")
 plot(dilated, col = hcl.colors(50, "viridis"), range = shared_range, axes = FALSE, main = "dilate(gradient, se_disc(4))")
 ```
 
@@ -226,11 +225,11 @@ plot(weight_th, col = hcl.colors(50, "viridis"), axes = FALSE, main = "tophat(we
 ![](b-morphological-operators_files/figure-html/continuous-tophat-1.png)
 
 [`tophat()`](https://nkaza.github.io/gridmorph/reference/tophat.md)’s
-definition (`mask - opening(mask)`) is exactly that: a real-valued
-residual (here, exactly `20` at the bump, matching its own height above
-the plateau) highlighting where the raster’s own values exceed its own
-opening, not a binarized approximation of one. On a 0/1 mask it reduces
-exactly to the familiar `mask AND NOT opening(mask)` - not
+definition (`k - opening(k)`) is exactly that: a real-valued residual
+(here, exactly `20` at the bump, matching its own height above the
+plateau) highlighting where the raster’s own values exceed its own
+opening, not a binarized approximation of one. On a 0/1 binary raster it
+reduces exactly to the familiar `k AND NOT opening(k)` - not
 approximately, since `opening(x) <= x` pointwise whenever the
 structuring element includes its own centre (true for every named
 shortcut at every radius).
@@ -256,22 +255,20 @@ plot(weight_bh, col = hcl.colors(50, "viridis"), axes = FALSE, main = "bottomhat
 Categorical rasters
 ([`terra::is.factor()`](https://rspatial.github.io/terra/reference/is.bool.html) -
 discrete, unordered class codes, e.g. a land-cover classification) are a
-genuinely different case, not just a relabelled version of the
-continuous one. Taking the local min/max of the raw CODE NUMBERS would
-only mean something spatially if those codes happened to carry a real
-order, and for nominal categories they don’t - there’s no meaningful
-sense in which land-cover code `1` (say, forest) is “less than” code `3`
-(say, urban). So
+genuinely different case. Taking the local min/max of the raw CODE
+NUMBERS would only mean something spatially if those codes happened to
+carry a real order, and for nominal categories they don’t - there’s no
+meaningful sense in which land-cover code `1` (say, forest) is “less
+than” code `3` (say, urban). So
 [`erode()`](https://nkaza.github.io/gridmorph/reference/erode.md)/[`dilate()`](https://nkaza.github.io/gridmorph/reference/dilate.md)
-switch to standard label-image morphology instead of the numeric min/max
-formulas above:
+switch to standard label-image morphology instead:
 
 - **[`erode()`](https://nkaza.github.io/gridmorph/reference/erode.md)**:
   a cell keeps its own label only if every cell in its neighbourhood
   shares that exact label; otherwise it becomes unlabelled (`NA`).
   Equivalent to eroding each class’s own binary mask separately and
-  taking the union - classes are mutually exclusive, so there’s never an
-  overlap to resolve.
+  taking the union - classes are mutually exclusive, so there is never
+  an overlap to resolve.
 - **[`dilate()`](https://nkaza.github.io/gridmorph/reference/dilate.md)**:
   an already-labelled cell is left untouched; an unlabelled (`NA`) cell
   is filled with the majority label among its labelled neighbours.
@@ -353,25 +350,26 @@ on that instead.
 The first two columns are a genuine generalization: grayscale morphology
 (local min/max) restricted to exactly two values reproduces binary
 morphology exactly, not approximately - continuous *contains* binary as
-a special case. Categorical is NOT a further step along that same chain,
-even though the table lists it last and it shares the same six function
-names. Ordering is exactly what grayscale morphology needs (`min`/`max`
-require it), and categorical data is defined by *not* having any - so
-categorical erosion/dilation can’t be “binary/continuous, generalized
-further,” it has to be a different rule built on a different assumption
-(every class treated symmetrically, none privileged as background). That
-difference shows up even in the pure two-class case, not just with three
-or more classes: wrap a binary `0`/`1` raster as a `factor` and erode
-it, and a background cell sitting right next to the shape becomes `NA`,
-not the stable `0` plain binary erosion gives it - verified directly,
-not a hypothetical edge case. Ordinary binary erosion treats `0` as an
-invariant background that only ever gets encroached on; categorical
-erosion has no privileged class at all, so that same cell’s
-neighbourhood simply isn’t unanimous. All three columns share a common
-*purpose* (shrink, grow, reshape) and a common *interface* (the same six
-functions), not a single generalization chain - binary and continuous
-sit on one axis (does order matter, and how much), categorical sits on a
-genuinely different one (are classes symmetric, with no order at all).
+a special case. However Categorical rasters are different. Operators
+have to be has to be a different rule built on a different assumption
+(every class treated symmetrically, none privileged as background). This
+might be particularly problematic if a binary raster is converted to a
+categorical. Looks can be deceiving, if we only pay attention to
+category 1.
+
+``` r
+
+disk_factor <- as.factor(noisy)
+r1 <- opening(disk_factor, se_diamond(2))
+r2 <- opening(noisy, se_diamond(2))
+
+par(mfrow = c(1, 3))
+plot(disk_factor, col = c("white", "steelblue"), legend = FALSE, axes = FALSE, main = "Categorical raster", colNA = 'red')
+plot(r1, col = c("white", "steelblue"), legend = FALSE, axes = FALSE, main = "Opening (Cat)", colNA = "red")
+plot(r2, col = c("white", "steelblue"), legend = FALSE, axes = FALSE, main = "Opening (Bin)", colNA = "red")
+```
+
+![](b-morphological-operators_files/figure-html/unnamed-chunk-1-1.png)
 
 ## 6 Practical notes
 
