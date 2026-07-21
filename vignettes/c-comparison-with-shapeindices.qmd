@@ -1,5 +1,6 @@
 ---
 title: "3. Comparison with shapeindices"
+author: "Nikhil Kaza"
 date: "`r Sys.Date()`"
 format:
   html:
@@ -26,7 +27,7 @@ cat("This vignette compares `gridmorph` against its sibling package ",
     "Install both `shapeindices` and `sf` to reproduce it.")
 ```
 
-`gridmorph` and `shapeindices` compute the *same thirteen indices*, defined
+`gridmorph` and `shapeindices` compute the *same indices*, defined
 identically, on two different representations of a shape - a raster
 (`gridmorph`) versus an `sf` (multi)polygon triangulated via constrained
 Delaunay triangulation (`shapeindices`). Neither representation is
@@ -39,6 +40,9 @@ Carolina's 100 counties (shipped with the `sf` package) throughout,
 rasterizing the same polygons `shapeindices` operates on directly.
 
 ```{r load}
+#| code-fold: true
+
+
 library(gridmorph)
 library(shapeindices)
 library(sf)
@@ -66,9 +70,8 @@ barrier islands) for the scaling story.
 # Accuracy: does the raster converge to the vector's answer?
 
 `shapeindices` triangulates the polygon directly, so its own `deterministic
-= TRUE` answer is as exact as floating-point CDT triangulation and (for
-the Monte Carlo indices) a large sample get: a genuine, essentially-exact
-reference value, not an approximation to compare against.
+= TRUE` answer is as reliable as floating-point CDT triangulation and (for
+the Monte Carlo indices) a large sample get
 
 ```{r vector-reference}
 vec_ref <- shape_indices(subset_union, which = c("hull_ratio", "polsby_popper", "depth", "moment_of_inertia"))
@@ -80,6 +83,9 @@ the closer that approximation gets. Rasterizing `subset_union` at four
 increasing resolutions and running `gm_shape_indices()` on each:
 
 ```{r accuracy-convergence}
+#|code-fold: TRUE
+
+
 rasterize_at <- function(vect_poly, n) {
   bb <- ext(vect_poly)
   cellsize <- max(bb$xmax - bb$xmin, bb$ymax - bb$ymin) / n
@@ -94,7 +100,7 @@ convergence <- do.call(rbind, lapply(c(25, 50, 100, 200), function(n) {
                            size = 3000, seed = 1)
   data.frame(n_cells_per_side = n, n_valid_cells = n_valid, t(res))
 }))
-knitr::kable(format = "html", convergence, digits = 4, row.names = FALSE)
+knitr::kable(format = "html", t(convergence), digits = 3, row.names = TRUE)
 ```
 
 `hull_ratio` and `moment_of_inertia` converge quickly - by 100 cells per
@@ -141,14 +147,11 @@ gm_w <- gm_shape_indices(r_bir74, which = c("moment_of_inertia", "convexity", "h
                           weighted = TRUE, size = 1500, seed = 1)
 
 comparison <- rbind(vector = unlist(vec_w), raster = gm_w[c("moment_of_inertia", "convexity", "hull_ratio")])
-knitr::kable(format = "html", comparison, digits = 4)
+knitr::kable(format = "html", t(comparison), digits = 3)
 ```
 
-A close match across all three, including `hull_ratio` - unsurprising,
-since none of the six classic metrics have a weighted form at all (see
-`vignette("a-basic-usage")`), so this is really the SAME unweighted
-comparison as above, just confirming that weighting `convexity`/
-`moment_of_inertia` doesn't disturb the underlying geometric accuracy.
+A close match across all three. Note that hull ratio is the same for weighted and unweigthed case (earlier). But the table also confirms that  both raster and vector based indices agree even when different geometric models are used for `convexity` and `moment_of_inertia`. 
+
 
 # Computational cost
 
@@ -187,17 +190,20 @@ resolution (`shapeindices`' own 39-triangle mesh vs. `gridmorph`'s 200-
 cells-per-side raster from above):
 
 ```{r timing-subset}
+#|code-fold: TRUE
+
 r_200 <- rasterize_at(subset_vect, 200)
 
 t_vector <- system.time(vec_all <- shape_indices(subset_union))
-t_raster <- system.time(gm_all  <- gm_shape_indices(r_200, size = 1500, seed = 1))
+t_raster <- system.time(gm_all  <- gm_shape_indices(r_200, size = 200, seed = 1))
 
 data.frame(package = c("shapeindices (vector)", "gridmorph (raster)"),
            elapsed_seconds = c(t_vector[["elapsed"]], t_raster[["elapsed"]]))
 ```
 
-Both are fast at this scale - a handful of counties is a small problem
-either way. The difference shows up on a genuinely large, complex shape:
+Both are relatively fast at this scale. The `gridmorph` time is largely driven by the `geodesic` indices, which are not (yet) in the `shapeindices`. 
+
+More differences shows up on a genuinely large, complex shape:
 all 100 NC counties combined into one, with real holes and real
 multi-part dispersal (barrier islands). `shapeindices`' own deterministic
 mode warns explicitly once a mesh gets large - triangulating the full NC
@@ -211,10 +217,10 @@ r_nc <- rasterize_at(nc_vect, 500)
 as.numeric(global(r_nc == 1, "sum", na.rm = TRUE))  # valid cell count
 
 t_full <- system.time(gm_full <- gm_shape_indices(r_nc, size = 500, seed = 1))
-t_full[["elapsed"]]  # ALL THIRTEEN indices, not just one
+t_full[["elapsed"]] 
 ```
 
-All thirteen indices, in roughly a second - not because `gridmorph`'s own
+All  indices, in roughly a second - not because `gridmorph`'s own
 math is cheaper per-unit, but because it never had an `O(n^2)` mode to
 fall into in the first place: every index here is `O(N)` or Monte Carlo
 `O(size)`, both of which scale predictably as the shape gets more
@@ -225,6 +231,8 @@ argument to switch automatically) - the point isn't that one package is
 cliff to fall off in the first place, because raster cell counts make
 that mode a non-starter from the start.
 
+Furthermore, for this particular dataset `geodesic` indices return `NA` due to disconnected patches. This check is quick and is done prior to computation and thus paradoxically all NC dataset takes shorter time than just the 4 county dataset with smaller `size`
+
 
 # Summary
 
@@ -233,13 +241,10 @@ same question about two different kinds of input. If your data already
 lives as `sf` polygons and isn't so complex that the mesh gets huge,
 `shapeindices`' exact triangulation is the more precise answer, often at
 comparable or better speed for realistically-sized shapes.
+
 If your data is already a raster, or is complex/large enough that exact
 vector triangulation gets slow or memory-hungry, `gridmorph` trades a
 controllable, resolution-dependent approximation for cost that scales
 predictably - `O(N)` or Monte Carlo throughout, with no quadratic mode to
 fall into and explicit, hard memory ceilings rather than silent
-blowups. The safest bridge between the two, when you need it, is exactly
-what this vignette did: rasterize at a resolution fine enough for the
-indices you actually care about (area-based ones tolerate coarse grids;
-perimeter-based ones need much finer ones), and treat the vector answer
-as ground truth to validate against.
+blowups. Pick one that works for your usecase.
