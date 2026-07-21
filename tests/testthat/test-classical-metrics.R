@@ -100,12 +100,30 @@ test_that("area and n_valid_cells agree across all six functions", {
     expect_equal(gm_hull_ratio_index(r)$n_valid_cells, as.integer(n))
 })
 
-test_that("hull/mbc/circle geometries are returned as terra SpatVectors for plotting", {
+test_that("hull/mbc/mbr/circle geometries are returned as terra SpatVectors for plotting", {
     r <- make_square_mask()
     expect_s4_class(gm_hull_ratio_index(r)$hull, "SpatVector")
     expect_s4_class(gm_reock_index(r)$mbc, "SpatVector")
+    expect_s4_class(gm_width_length_ratio_index(r)$mbr, "SpatVector")
     expect_s4_class(gm_detour_index(r)$hull, "SpatVector")
     expect_s4_class(gm_exchange_index(r)$circle, "SpatVector")
+})
+
+test_that("gm_width_length_ratio_index is (approximately) invariant to rotation, via the minimum-area bounding rectangle rather than the raster's own axis-aligned extent", {
+    rotate_rect_rast <- function(deg, res = 0.02) {
+        corners <- matrix(c(-1, -0.5, 1, -0.5, 1, 0.5, -1, 0.5, -1, -0.5), ncol = 2, byrow = TRUE)
+        th <- deg * pi / 180
+        rotmat <- matrix(c(cos(th), sin(th), -sin(th), cos(th)), 2, 2)
+        rotated <- corners %*% rotmat
+        poly <- terra::vect(rotated, type = "polygons", crs = "local")
+        rr <- terra::rast(terra::ext(-2, 2, -2, 2), resolution = res, crs = "local")
+        terra::rasterize(poly, rr, field = 1, background = NA)
+    }
+    base_index <- gm_width_length_ratio_index(rotate_rect_rast(0))$index
+    for (deg in c(15, 30, 45, 60, 75, 90)) {
+        idx <- gm_width_length_ratio_index(rotate_rect_rast(deg))$index
+        expect_equal(idx, base_index, tolerance = 0.02, label = sprintf("rotation = %d degrees", deg))
+    }
 })
 
 test_that("no valid cells gives NA with a warning, not an error, for all six functions", {

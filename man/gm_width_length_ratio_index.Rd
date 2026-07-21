@@ -2,7 +2,7 @@
 % Please edit documentation in R/classical-metrics.R
 \name{gm_width_length_ratio_index}
 \alias{gm_width_length_ratio_index}
-\title{Width-length ratio of a terra raster's bounding box}
+\title{Width-length ratio of a terra raster's minimum-area bounding rectangle}
 \usage{
 gm_width_length_ratio_index(rast)
 }
@@ -12,18 +12,25 @@ gm_width_length_ratio_index(rast)
 nor exactly \code{0} - both are holes, no separate mask argument.}
 }
 \value{
-\code{list(index, length, width, n_valid_cells)}
+\code{list(index, length, width, mbr, n_valid_cells)}. \code{mbr} is the
+minimum-area bounding rectangle itself, a terra SpatVector, for
+plotting.
 }
 \description{
-The shorter of the bounding box's x/y extents over the longer, in
-\verb{(0, 1]}, \code{1} = a square bounding box. Axis-aligned, not the minimum
-bounding rectangle at any rotation - a diagonally-oriented elongated
-shape can score deceptively high, the classic limitation of this score.
-No \code{weighted} argument - see this file's own header for why.
+The shorter side of the shape's minimum-area bounding rectangle, at
+ANY rotation, over the longer side, in \verb{(0, 1]}, \code{1} = that rectangle
+is a square. Found via rotating calipers over the shape's own convex
+hull (\code{terra::convHull()}) - deliberately NOT the raster's axis-aligned
+extent, matching a fix already made to \code{shapeindices::width_length_ratio_index()}:
+an axis-aligned box scores a shape's elongation relative to how it
+happens to be oriented on the grid, not relative to the shape itself -
+rotating a shape in place, without changing it at all otherwise, could
+swing the old score anywhere from its true value up to a coincidental
+\code{1}. No \code{weighted} argument - see this file's own header for why.
 }
 \details{
 KNOWN LIMITATION (ported unchanged from shapeindices): blind to both
-holes and multi-part dispersal, since only the bounding box's own
+holes and multi-part dispersal, since only the bounding rectangle's own
 extent enters the ratio - a shape and the same shape with a large hole
 punched through it score identically.
 }

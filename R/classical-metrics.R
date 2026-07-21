@@ -6,7 +6,9 @@
 ##
 ##   gm_hull_ratio_index         = area / area(convex hull)
 ##   gm_polsby_popper_index      = 4*pi*area / perimeter^2
-##   gm_width_length_ratio_index = min(bbox width, height) / max(...)
+##   gm_width_length_ratio_index = min(mbr side, side) / max(...), mbr =
+##                                  minimum-area bounding rectangle at any
+##                                  rotation, NOT the axis-aligned extent
 ##   gm_reock_index               = area / area(minimum bounding circle)
 ##   gm_detour_index               = perimeter(equal-area circle) / perimeter(convex hull)
 ##   gm_exchange_index             = area(shape INTERSECT equal-area circle at centroid) / area
@@ -174,6 +176,56 @@
         }
     }
     circle
+}
+
+## -- minimum-area bounding rectangle (rotating calipers), for
+## gm_width_length_ratio_index() - the classic result that the minimum-area
+## rectangle enclosing a convex polygon always has one side flush with a
+## hull edge, so testing every hull edge's own orientation is exhaustive,
+## not an approximation. No sf dependency needed (unlike shapeindices' own
+## sf::st_minimum_rotated_rectangle() port of this identical fix) -
+## straightforward coordinate-geometry math over the hull vertices already
+## in hand from terra::convHull(), matching this file's own
+## .min_enclosing_circle() precedent of porting exact geometry algorithms
+## directly rather than adding a runtime dependency for one calculation.
+
+#' Minimum-area bounding rectangle of a convex point set, via rotating
+#' calipers over each hull edge's own orientation.
+#' @param pts an Nx2 matrix, a convex polygon's own vertices in order (as
+#'   returned by `terra::crds()` on a `terra::convHull()` result)
+#' @return `list(width, length, corners)` - `corners` is a 4x2 matrix, the
+#'   rectangle's own corners in the same coordinate space as `pts`
+#' @noRd
+.min_area_bounding_rect <- function(pts) {
+    pts <- unique(pts)
+    n <- nrow(pts)
+    best_area <- Inf
+    best <- NULL
+    for (i in seq_len(n)) {
+        j <- if (i == n) 1 else i + 1
+        edge <- pts[j, ] - pts[i, ]
+        elen <- sqrt(sum(edge^2))
+        u <- edge / elen
+        v <- c(-u[2], u[1])
+        proj_u <- pts %*% u
+        proj_v <- pts %*% v
+        umin <- min(proj_u); umax <- max(proj_u)
+        vmin <- min(proj_v); vmax <- max(proj_v)
+        area <- (umax - umin) * (vmax - vmin)
+        if (area < best_area) {
+            best_area <- area
+            corners <- rbind(
+                umin * u + vmin * v, umax * u + vmin * v,
+                umax * u + vmax * v, umin * u + vmax * v
+            )
+            best <- list(
+                width = min(umax - umin, vmax - vmin),
+                length = max(umax - umin, vmax - vmin),
+                corners = corners
+            )
+        }
+    }
+    best
 }
 
 ## -- shared raster-native geometry helpers ---------------------------------
@@ -382,20 +434,27 @@ gm_polsby_popper_index <- function(rast) {
     list(index = index, area = area, perimeter = perimeter, ref_index = ref_index, n_valid_cells = as.integer(n_valid))
 }
 
-#' Width-length ratio of a terra raster's bounding box
+#' Width-length ratio of a terra raster's minimum-area bounding rectangle
 #'
-#' The shorter of the bounding box's x/y extents over the longer, in
-#' `(0, 1]`, `1` = a square bounding box. Axis-aligned, not the minimum
-#' bounding rectangle at any rotation - a diagonally-oriented elongated
-#' shape can score deceptively high, the classic limitation of this score.
-#' No `weighted` argument - see this file's own header for why.
+#' The shorter side of the shape's minimum-area bounding rectangle, at
+#' ANY rotation, over the longer side, in `(0, 1]`, `1` = that rectangle
+#' is a square. Found via rotating calipers over the shape's own convex
+#' hull (`terra::convHull()`) - deliberately NOT the raster's axis-aligned
+#' extent, matching a fix already made to `shapeindices::width_length_ratio_index()`:
+#' an axis-aligned box scores a shape's elongation relative to how it
+#' happens to be oriented on the grid, not relative to the shape itself -
+#' rotating a shape in place, without changing it at all otherwise, could
+#' swing the old score anywhere from its true value up to a coincidental
+#' `1`. No `weighted` argument - see this file's own header for why.
 #'
 #' KNOWN LIMITATION (ported unchanged from shapeindices): blind to both
-#' holes and multi-part dispersal, since only the bounding box's own
+#' holes and multi-part dispersal, since only the bounding rectangle's own
 #' extent enters the ratio - a shape and the same shape with a large hole
 #' punched through it score identically.
 #' @inheritParams gm_hull_ratio_index
-#' @return `list(index, length, width, n_valid_cells)`
+#' @return `list(index, length, width, mbr, n_valid_cells)`. `mbr` is the
+#'   minimum-area bounding rectangle itself, a terra SpatVector, for
+#'   plotting.
 #' @examples
 #' r <- terra::rast(nrows = 40, ncols = 40, xmin = 0, xmax = 40, ymin = 0, ymax = 40, crs = "local")
 #' terra::values(r) <- 0
@@ -410,16 +469,17 @@ gm_width_length_ratio_index <- function(rast) {
 
     if (n_valid == 0) {
         warning("No valid cells; index is not defined.")
-        return(list(index = NA_real_, length = NA_real_, width = NA_real_, n_valid_cells = 0L))
+        return(list(index = NA_real_, length = NA_real_, width = NA_real_, mbr = NULL, n_valid_cells = 0L))
     }
 
-    e <- terra::ext(terra::trim(terra::ifel(valid, 1, NA)))
-    dx <- e$xmax - e$xmin
-    dy <- e$ymax - e$ymin
-    width <- min(dx, dy)
-    length <- max(dx, dy)
+    hull <- terra::convHull(.valid_polygons(valid))
+    pts <- unique(terra::crds(hull))
+    rect <- .min_area_bounding_rect(pts)
+    width <- rect$width
+    length <- rect$length
     index <- if (length > 0) width / length else NA_real_
-    list(index = index, length = length, width = width, n_valid_cells = as.integer(n_valid))
+    mbr <- terra::vect(rect$corners, type = "polygons", crs = terra::crs(rast))
+    list(index = index, length = length, width = width, mbr = mbr, n_valid_cells = as.integer(n_valid))
 }
 
 #' Reock compactness score of a terra raster
