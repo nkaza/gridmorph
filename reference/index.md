@@ -42,7 +42,8 @@
 - [`gm_span_index()`](https://nkaza.github.io/gridmorph/reference/gm_span_index.md)
   : Span index for a terra raster
 - [`gm_width_length_ratio_index()`](https://nkaza.github.io/gridmorph/reference/gm_width_length_ratio_index.md)
-  : Width-length ratio of a terra raster's bounding box
+  : Width-length ratio of a terra raster's minimum-area bounding
+  rectangle
 - [`opening()`](https://nkaza.github.io/gridmorph/reference/opening.md)
   : Morphological opening (erode then dilate) of a terra SpatRaster
 - [`se_box()`](https://nkaza.github.io/gridmorph/reference/se_box.md) :

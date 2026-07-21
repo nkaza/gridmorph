@@ -304,19 +304,19 @@ knitr::kable(format = "html", round(all_results, 3))
 
 |                      |  disk | pinwheel | dumbbell |  ring |     L | patchy |
 |:---------------------|------:|---------:|---------:|------:|------:|-------:|
-| depth                | 1.001 |    0.408 |    0.665 | 0.425 | 0.675 |  0.395 |
-| moment_of_inertia    | 1.000 |    0.527 |    0.411 | 0.523 | 0.689 |  0.187 |
-| moment_isotropy      | 1.000 |    1.000 |    0.093 | 1.000 | 0.400 |  0.119 |
-| directional_balance  | 1.000 |    0.999 |    0.999 | 1.000 | 0.926 |  0.737 |
-| convexity            | 1.000 |    0.794 |    0.897 | 0.594 | 0.941 |  0.663 |
-| span                 | 1.014 |    0.806 |    0.662 | 0.711 | 0.787 |  0.478 |
-| radial_concentration | 1.023 |    0.750 |    0.661 | 0.727 | 0.838 |  0.501 |
-| hull_ratio           | 0.968 |    0.478 |    0.710 | 0.666 | 0.803 |  0.363 |
-| polsby_popper        | 0.978 |    0.160 |    0.465 | 0.280 | 0.593 |  0.111 |
-| width_length_ratio   | 1.000 |    1.000 |    0.407 | 1.000 | 1.000 |  0.747 |
-| reock                | 0.996 |    0.345 |    0.354 | 0.687 | 0.447 |  0.188 |
-| detour               | 0.997 |    0.641 |    0.747 | 0.828 | 0.806 |  0.539 |
-| exchange             | 0.993 |    0.591 |    0.438 | 0.550 | 0.726 |  0.181 |
+| depth                | 1.001 |    0.408 |    0.665 | 0.425 | 0.675 |  0.436 |
+| moment_of_inertia    | 1.000 |    0.527 |    0.411 | 0.523 | 0.689 |  0.251 |
+| moment_isotropy      | 1.000 |    1.000 |    0.093 | 1.000 | 0.400 |  0.213 |
+| directional_balance  | 1.000 |    0.999 |    0.999 | 1.000 | 0.926 |  0.993 |
+| convexity            | 1.000 |    0.794 |    0.897 | 0.594 | 0.941 |  0.584 |
+| span                 | 1.014 |    0.806 |    0.662 | 0.711 | 0.787 |  0.520 |
+| radial_concentration | 1.023 |    0.750 |    0.661 | 0.727 | 0.838 |  0.498 |
+| hull_ratio           | 0.968 |    0.478 |    0.710 | 0.666 | 0.803 |  0.399 |
+| polsby_popper        | 0.978 |    0.160 |    0.465 | 0.280 | 0.593 |  0.121 |
+| width_length_ratio   | 1.000 |    1.000 |    0.407 | 1.000 | 1.000 |  0.594 |
+| reock                | 0.996 |    0.345 |    0.354 | 0.687 | 0.447 |  0.205 |
+| detour               | 0.997 |    0.641 |    0.747 | 0.828 | 0.806 |  0.574 |
+| exchange             | 0.993 |    0.591 |    0.438 | 0.550 | 0.726 |  0.312 |
 | geodesic_span        | 0.999 |    0.603 |    0.681 | 0.694 | 0.823 |     NA |
 | geodesic_chord       | 0.996 |    0.774 |    0.843 | 0.877 | 0.913 |     NA |
 
@@ -373,7 +373,7 @@ p <- terra::patches(shapes$patchy, directions = 8, zeroAsNA = TRUE)
 terra::global(p, "max", na.rm = TRUE)[[1]]  # number of disjoint pieces
 ```
 
-    [1] 11
+    [1] 9
 
 That “no special machinery” claim holds for thirteen of the fifteen
 indices - already visible in the results table above, where `patchy` got
@@ -459,12 +459,12 @@ knitr::kable(format = "html", scaling, caption = "Seconds for all fifteen gridmo
 
 | patches | gridmorph | shapeindices (Monte Carlo) |
 |--------:|----------:|---------------------------:|
-|       2 |      1.60 |                       1.71 |
-|       5 |      1.55 |                       2.46 |
-|      10 |      1.57 |                       3.26 |
+|       2 |      1.58 |                       1.73 |
+|       5 |      1.55 |                       2.45 |
+|      10 |      1.56 |                       3.27 |
 |      20 |      1.56 |                       3.88 |
-|      40 |      1.52 |                       5.83 |
-|      80 |      1.56 |                       7.89 |
+|      40 |      1.56 |                       5.83 |
+|      80 |      1.54 |                       7.88 |
 
 Seconds for all fifteen gridmorph indices vs. all thirteen shapeindices
 indices, same shapes, increasing patch count at roughly fixed total
@@ -497,9 +497,9 @@ knitr::kable(format = "html", deterministic, caption = "shapeindices' own determ
 
 | patches | n_triangles | seconds |
 |--------:|------------:|--------:|
-|       2 |         264 |    0.81 |
+|       2 |         264 |    0.80 |
 |      10 |         516 |    1.94 |
-|      40 |        1036 |    4.42 |
+|      40 |        1036 |    4.41 |
 
 shapeindices' own deterministic (exhaustive) convexity_index() mode,
 same patchy shapes. {.table .caption-top}

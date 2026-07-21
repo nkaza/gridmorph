@@ -1,10 +1,17 @@
-# Width-length ratio of a terra raster's bounding box
+# Width-length ratio of a terra raster's minimum-area bounding rectangle
 
-The shorter of the bounding box's x/y extents over the longer, in
-`(0, 1]`, `1` = a square bounding box. Axis-aligned, not the minimum
-bounding rectangle at any rotation - a diagonally-oriented elongated
-shape can score deceptively high, the classic limitation of this score.
-No `weighted` argument - see this file's own header for why.
+The shorter side of the shape's minimum-area bounding rectangle, at ANY
+rotation, over the longer side, in `(0, 1]`, `1` = that rectangle is a
+square. Found via rotating calipers over the shape's own convex hull
+([`terra::convHull()`](https://rspatial.github.io/terra/reference/convhull.html)) -
+deliberately NOT the raster's axis-aligned extent, matching a fix
+already made to
+[`shapeindices::width_length_ratio_index()`](https://nkaza.github.io/shapeindices/reference/width_length_ratio_index.html):
+an axis-aligned box scores a shape's elongation relative to how it
+happens to be oriented on the grid, not relative to the shape itself -
+rotating a shape in place, without changing it at all otherwise, could
+swing the old score anywhere from its true value up to a coincidental
+`1`. No `weighted` argument - see this file's own header for why.
 
 ## Usage
 
@@ -22,14 +29,16 @@ gm_width_length_ratio_index(rast)
 
 ## Value
 
-`list(index, length, width, n_valid_cells)`
+`list(index, length, width, mbr, n_valid_cells)`. `mbr` is the
+minimum-area bounding rectangle itself, a terra SpatVector, for
+plotting.
 
 ## Details
 
 KNOWN LIMITATION (ported unchanged from shapeindices): blind to both
-holes and multi-part dispersal, since only the bounding box's own extent
-enters the ratio - a shape and the same shape with a large hole punched
-through it score identically.
+holes and multi-part dispersal, since only the bounding rectangle's own
+extent enters the ratio - a shape and the same shape with a large hole
+punched through it score identically.
 
 ## Examples
 
